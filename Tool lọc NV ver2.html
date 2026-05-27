@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tool lọc nhân sự mới từ grReport</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{--bg:#f6f8fb;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#0f766e;--accent2:#115e59;--warn:#b45309;--bad:#b91c1c;--ok:#15803d}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+    .wrap{max-width:1260px;margin:0 auto;padding:24px} h1{margin:0 0 8px;font-size:26px} h2{font-size:18px;margin:0 0 12px} p{margin:6px 0;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 4px 16px #0f172a12;padding:18px;margin:14px 0}
+    .full{grid-column:1/-1}.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.field{display:flex;flex-direction:column;gap:6px;min-width:220px}.field label{font-weight:700;color:#334155}.field input[type=file],.field input[type=date]{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}.field.checkbox{flex-direction:row;align-items:center;min-width:auto}.field.checkbox input{width:18px;height:18px}
+    button{border:0;border-radius:12px;padding:11px 16px;background:var(--accent);color:#fff;font-weight:800;cursor:pointer}button.secondary{background:#334155}button.ghost{background:#e2e8f0;color:#0f172a}button:disabled{opacity:.45;cursor:not-allowed}.hint{font-size:13px;color:var(--muted)}
+    .kpis{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px}.kpi{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:12px}.kpi b{font-size:22px;display:block}.kpi span{color:var(--muted)}
+    table{border-collapse:separate;border-spacing:0;width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;white-space:nowrap}th{background:#0f766e;color:#fff;position:sticky;top:0;z-index:1}tr:last-child td{border-bottom:0}.tablebox{max-height:520px;overflow:auto;border-radius:14px}.smallbox{max-height:330px;overflow:auto}.pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:12px}.warn{color:var(--warn);font-weight:700}.bad{color:var(--bad);font-weight:700}.ok{color:var(--ok);font-weight:700}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.note{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px;color:#92400e}.rule-list li{margin:6px 0}.tabs{display:flex;gap:8px;margin-bottom:10px}.tab{background:#e2e8f0;color:#0f172a}.tab.active{background:var(--accent);color:#fff}.hidden{display:none}.search{margin-left:auto;min-width:260px;border:1px solid var(--line);border-radius:12px;padding:10px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}th,td{font-size:12px}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Tool lọc nhân sự mới từ file grReport</h1>
+  <p>Dùng để lấy các nhân sự có ngày vào từ mốc chọn, chưa có <b>MNV</b> trong file <b>Báo cáo số lượng nhân viên</b>, sau đó tự điền các cột theo quy tắc đang dùng trong sheet POWERBI.</p>
+
+  <div class="card note">
+    <b>Quy tắc chính</b>
+    <ul class="rule-list">
+      <li><b>Khối</b>: ưu tiên theo <span class="mono">Nhóm bộ phận</span> sản xuất trước, sau đó theo <span class="mono">Nhóm vị trí</span> như Kho vận/Kinh doanh/Bảo hành; nếu chưa rõ thì học từ các MNV đã có trong file báo cáo.</li>
+      <li><b>Nhóm bộ phận</b>: học từ cặp <span class="mono">grReport.Phòng ban/Chi nhánh</span> → <span class="mono">POWERBI.Nhóm bộ phận</span>; ví dụ CNHP - ĐV/VS → CNHP, CN Hố Nai → CNBH, NanoHome → Nanohome.</li>
+      <li><b>Nhóm vị trí</b>: học từ <span class="mono">Vị trí công việc</span>/<span class="mono">Chức danh</span>; có fallback theo từ khóa như Công nhân, Phụ kho, Giao hàng, Tài xế, Sales, Bảo hành.</li>
+      <li><b>Pháp nhân</b>: học từ <span class="mono">Cty pháp nhân</span>; nếu trống thì suy luận theo bộ phận đã có dữ liệu.</li>
+      <li><b>Nơi làm việc</b>: chuẩn hóa trực tiếp <span class="mono">VPĐBP1/VPDDBP1 → VPĐBP</span>; nếu trống thì suy luận theo bộ phận.</li>
+      <li><b>Điều kiện lọc người mới</b>: chỉ so sánh theo <span class="mono">MNV/Mã NV</span>. Không chặn trùng theo họ tên để không bỏ sót trường hợp trùng tên nhưng khác mã nhân viên.</li>
+      <li><b>Ngày</b>: Ngày vào lấy từ <span class="mono">Ngày vào làm</span>; Ngày tiếp nhận lấy từ <span class="mono">Ngày bắt đầu</span> nếu có, nếu trống dùng Ngày vào làm; Ngày nghỉ/Ngày kết thúc chỉ lấy <span class="mono">Ngày nghỉ việc</span> khi đã có ngày nghỉ.</li>
+    </ul>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1) Chọn file</h2>
+      <div class="field"><label>File báo cáo số lượng nhân viên (.xlsx)</label><input id="reportFile" type="file" accept=".xlsx,.xls" /></div>
+      <br>
+      <div class="field"><label>File nguồn grReport (.xls/.xlsx)</label><input id="sourceFile" type="file" accept=".xlsx,.xls" /></div>
+      <p class="hint">File báo cáo sẽ đọc sheet POWERBI nếu có. grReport đọc sheet đầu tiên.</p>
+    </div>
+    <div class="card">
+      <h2>2) Điều kiện lọc</h2>
+      <div class="row">
+        <div class="field"><label>Lấy nhân sự vào từ ngày</label><input id="startDate" type="date" value="2025-01-01" /></div>
+        <label class="field checkbox"><input id="includeAudit" type="checkbox" checked /> Xuất kèm cột kiểm tra</label>
+      </div>
+      <br>
+      <div class="row">
+        <button id="runBtn">Phân tích & lọc</button>
+        <button id="exportBtn" class="secondary" disabled>Xuất Excel kết quả</button>
+        <button id="exportRulesBtn" class="ghost" disabled>Xuất bảng quy tắc học được</button>
+      </div>
+      <p id="status" class="hint"></p>
+    </div>
+  </div>
+
+  <div class="card full">
+    <h2>Kết quả tổng quan</h2>
+    <div id="kpis" class="kpis"></div>
+  </div>
+
+  <div class="card full">
+    <div class="row">
+      <h2 style="margin-right:12px">Danh sách nhân sự mới</h2>
+      <input id="searchBox" class="search" placeholder="Tìm MNV, họ tên, bộ phận..." />
+    </div>
+    <div id="result" class="tablebox"></div>
+  </div>
+
+  <div class="card full">
+    <div class="tabs">
+      <button class="tab active" data-tab="ruleSummary">Tóm tắt quy tắc</button>
+      <button class="tab" data-tab="mapDept">Nhóm bộ phận</button>
+      <button class="tab" data-tab="mapPos">Nhóm vị trí</button>
+      <button class="tab" data-tab="mapLegal">Pháp nhân</button>
+      <button class="tab" data-tab="mapLoc">Nơi làm việc</button>
+    </div>
+    <div id="ruleSummary"></div>
+    <div id="mapDept" class="hidden"></div>
+    <div id="mapPos" class="hidden"></div>
+    <div id="mapLegal" class="hidden"></div>
+    <div id="mapLoc" class="hidden"></div>
+  </div>
+</div>
+
+<script>
+const TARGET_HEADERS = ["Khối","MNV","Họ tên","Bộ phận","Nhóm bộ phận","Vị trí","Nhóm vị trí","Nơi làm việc","Giới tính","Ngày sinh","Ngày vào","Ngày nghỉ","Ngày tiếp nhận","Ngày kết thúc","Trạng thái","Ghi chú","Pháp nhân"];
+const AUDIT_HEADERS = ["Nguồn_Phòng ban/Chi nhánh","Nguồn_Phòng ban","Nguồn_Cty pháp nhân","Nguồn_Địa điểm làm việc","Nguồn_Ngày bắt đầu","Nguồn_Ngày kết thúc","Cảnh báo"];
+let finalRows = [], finalRowsWithAudit = [], ruleBook = null;
+
+function removeVN(s){
+  return String(s ?? "").normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D');
+}
+function norm(s){ return removeVN(s).toLowerCase().replace(/\s+/g,' ').trim(); }
+function isBlank(v){ return v === undefined || v === null || String(v).trim() === ""; }
+function clean(v){ return isBlank(v) ? "" : String(v).trim(); }
+function idKey(v){
+  if(isBlank(v)) return "";
+  if(typeof v === 'number') return String(Math.trunc(v));
+  return String(v).trim().replace(/\.0$/,"");
+}
+function excelSerialToDate(n){
+  const utc = Math.round((Number(n) - 25569) * 86400 * 1000);
+  return new Date(utc);
+}
+function parseDate(v){
+  if(v instanceof Date && !isNaN(v)) return v;
+  if(typeof v === 'number' && isFinite(v) && v > 20000) return excelSerialToDate(v);
+  const s = clean(v);
+  if(!s) return null;
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if(m) return new Date(Date.UTC(+m[3], +m[2]-1, +m[1]));
+  m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(m) return new Date(Date.UTC(+m[1], +m[2]-1, +m[3]));
+  return null;
+}
+function fmtDate(v){
+  const d = parseDate(v); if(!d) return "";
+  const dd = String(d.getUTCDate()).padStart(2,'0');
+  const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+  const yy = d.getUTCFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+function ymd(d){
+  const dt = parseDate(d); if(!dt) return "";
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
+}
+function val(row, col){ return row[col] ?? ""; }
+function readRows(file, preferredSheet){
+  return new Promise((resolve, reject)=>{
+    const fr = new FileReader();
+    fr.onload = e => {
+      try{
+        const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', raw:true, cellDates:false});
+        const sheetName = preferredSheet && wb.SheetNames.includes(preferredSheet) ? preferredSheet : wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const matrix = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+        const headerRowIndex = matrix.findIndex(r => r.some(c => ["MNV","Mã NV","Họ tên","Họ và tên","Khối"].includes(clean(c))));
+        const hrow = headerRowIndex >= 0 ? headerRowIndex : 0;
+        const headers = (matrix[hrow] || []).map(h => clean(h));
+        const rows = matrix.slice(hrow+1).filter(r=>r.some(x=>!isBlank(x))).map(r=>{
+          const o = {}; headers.forEach((h,i)=>{ if(h) o[h] = r[i] ?? ""; }); return o;
+        });
+        resolve({sheetName, headers, rows});
+      }catch(err){ reject(err); }
+    };
+    fr.onerror = reject;
+    fr.readAsArrayBuffer(file);
+  });
+}
+function topCounter(counter){
+  let best = "", bestN = -1;
+  Object.entries(counter).forEach(([k,n]) => { if(n > bestN){ best = k; bestN = n; }});
+  return {value:best, count:bestN};
+}
+function buildMajorMap(sourceRows, reportRows, sourceCol, targetCol){
+  const repById = new Map(reportRows.map(r => [idKey(val(r,"MNV")), r]).filter(x=>x[0]));
+  const buckets = {};
+  sourceRows.forEach(s => {
+    const id = idKey(val(s,"Mã NV"));
+    const r = repById.get(id); if(!r) return;
+    const sv = clean(val(s, sourceCol)), tv = clean(val(r, targetCol));
+    if(!sv || !tv || tv === "None") return;
+    const k = norm(sv);
+    if(!buckets[k]) buckets[k] = {source:sv, counts:{}, total:0};
+    buckets[k].counts[tv] = (buckets[k].counts[tv] || 0) + 1;
+    buckets[k].total++;
+  });
+  const dict = {}, details = [];
+  Object.entries(buckets).forEach(([k,b])=>{
+    const t = topCounter(b.counts);
+    dict[k] = t.value;
+    details.push({source:b.source, target:t.value, count:t.count, total:b.total, rate: b.total ? Math.round(t.count/b.total*100) : 0});
+  });
+  details.sort((a,b)=>b.total-a.total || a.source.localeCompare(b.source,'vi'));
+  return {dict, details, sourceCol, targetCol};
+}
+function lookup(mapObj, value){ return mapObj?.dict?.[norm(value)] || ""; }
+
+function deriveDeptFromPhongBan(pb){
+  const n = norm(pb), s = clean(pb);
+  if(!s) return "";
+  if(n.includes('nm bien hoa')) return 'NM Biên Hòa';
+  if(n.includes('nmla') || n.includes('long an')) return 'NMLA';
+  if(n.includes('x.rg') || n.includes('rach gia')) return 'Xưởng Rạch Giá';
+  if(n.includes('hai phong')) return 'Xưởng Hải Phòng';
+  if(n.includes('xưởng quat') || n.includes('xuong quat')) return 'Xưởng Quạt';
+  if(n.includes('vinh')) return 'Xưởng Vinh';
+  const cn = s.match(/\bCN[A-ZĐ]+\b/i);
+  if(cn) return cn[0].toUpperCase();
+  if(n.includes('nanohome') || n.includes('nnh')) return 'NanoHome';
+  if(n.includes('ke toan')) return 'Kế Toán';
+  return s;
+}
+function normalizeVP(s){
+  const n = norm(s);
+  if(['vpdbp1','vpddbp1','vpdbp','vpddbp','vpd bp1'].includes(n.replace(/\s/g,''))) return 'VPĐBP';
+  if(n.includes('vpd') && n.includes('bp')) return 'VPĐBP';
+  return clean(s);
+}
+function directCompanyShort(s){
+  const n = norm(s);
+  if(!n) return "";
+  if(n.includes('nano - phuoc thanh')) return 'Nano';
+  if(n.includes('phuoc thanh')) return 'Phước Thạnh';
+  if(n.includes('nanohome')) return 'Nanohome';
+  if(n.includes('pt mekong')) return 'PT Mekong';
+  if(n.includes('pt hai phong')) return 'PT Hải Phòng';
+  if(n.includes('nanoco vinh')) return 'Nanoco Vinh';
+  if(n.includes('cau giay')) return 'Cầu Giấy';
+  if(n.includes('cambodia')) return 'Campuchia';
+  if(n.includes('orchestars')) return 'Orchestars';
+  if(n.includes('nanoco')) return 'Nanoco';
+  return clean(s);
+}
+function keywordPositionGroup(position, title){
+  const p = norm(position), t = norm(title), x = `${p} ${t}`;
+  if(x.includes('cong nhan')) return 'Công nhân';
+  if(x.includes('phu kho')) return 'Phụ kho';
+  if(x.includes('giao hang')) return 'Giao hàng';
+  if(x.includes('tai xe')) return 'Tài xế';
+  if(x.includes('bao hanh')) return 'Bảo hành';
+  if(x.includes('thu kho')) return 'Thủ kho';
+  if(x.includes('dieu phoi')) return 'Điều phối';
+  if(x.includes('truong chi nhanh')) return 'Trưởng CN';
+  if(x.includes('giam sat')) return 'Giám sát';
+  if(x.includes('ke toan truong')) return 'Kế toán trưởng';
+  if(x.includes('ke toan kho')) return 'Kế toán kho';
+  if(x.includes('nhan vien kinh doanh') || x.includes('sales')) return 'Sales';
+  if(x.includes('ban hang')) return 'Bán hàng';
+  if(x.includes('truong phong')) return 'Trưởng phòng';
+  if(x.includes('pho phong')) return 'Phó phòng';
+  if(x.includes('quan doc')) return 'Quản đốc';
+  if(x.includes('truong ca')) return 'Trưởng ca';
+  if(x.includes('to truong')) return 'Tổ trưởng';
+  if(x.includes('to pho')) return 'Tổ phó';
+  if(x.includes('tap vu') || x.includes('phu bep')) return 'Tạp vụ';
+  if(x.includes('bao ve')) return 'Bảo vệ';
+  if(x.includes('thuc tap')) return 'Thực tập sinh';
+  if(x.includes('giam doc')) return 'Giám đốc';
+  if(x.includes('truong nhom')) return 'Trưởng nhóm';
+  if(x.includes('truong bo phan')) return 'Trưởng bộ phận';
+  if(t.includes('chuyen vien')) return 'Chuyên viên';
+  if(t.includes('cong tac vien')) return 'Cộng tác viên';
+  return "";
+}
+function isProductionDept(nhomBP, boPhan){
+  const n = norm(`${nhomBP} ${boPhan}`);
+  return n.includes('nm bien hoa') || n.includes('nmla') || n.includes('xuong') || n.includes('san xuat');
+}
+function calcKhoi(nhomBP, boPhan, nhomVT, mapDeptKhoi, srcDept){
+  if(isProductionDept(nhomBP, boPhan)) return 'Sản xuất';
+  const vt = clean(nhomVT);
+  if(vt === 'Bảo hành' || norm(nhomBP).includes('bao hanh')) return 'Bảo hành';
+  if(['Tài xế','Giao hàng','Phụ kho','Thủ kho','Điều phối'].includes(vt)) return 'Kho vận';
+  if(['Sales','Bán hàng','Giám sát','Trưởng CN','Kế toán kho','Cộng tác viên'].includes(vt) || norm(nhomBP).startsWith('sales')) return 'Kinh doanh';
+  const learned = lookup(mapDeptKhoi, srcDept); if(learned) return learned;
+  if(['Công nhân','Quản đốc','Trưởng ca','Tổ trưởng','Tổ phó'].includes(vt)) return 'Sản xuất';
+  return 'Văn phòng';
+}
+function statusNormalize(s){
+  const n = norm(s);
+  if(n.includes('nghi')) return 'Nghỉ việc';
+  if(n.includes('dang lam')) return 'Đang làm việc';
+  return clean(s) || 'Đang làm việc';
+}
+function transformRow(s, maps){
+  const rawDept = clean(val(s,'Phòng ban/Chi nhánh')) || deriveDeptFromPhongBan(val(s,'Phòng ban'));
+  const rawLoc = clean(val(s,'Địa điểm làm việc'));
+  const boPhan = lookup(maps.deptToDept, rawDept) || rawDept;
+  const nhomBP = lookup(maps.deptToGroup, rawDept) || boPhan;
+  const pos = clean(val(s,'Vị trí công việc'));
+  const title = clean(val(s,'Chức danh'));
+  const nhomVT = lookup(maps.positionToGroup, pos) || keywordPositionGroup(pos,title) || lookup(maps.titleToGroup, title) || title;
+  let loc = normalizeVP(rawLoc);
+  if(!loc) loc = lookup(maps.deptToLocation, rawDept) || lookup(maps.locationToLocation, rawLoc) || "";
+  else loc = normalizeVP(lookup(maps.locationToLocation, rawLoc) || loc);
+  let legal = lookup(maps.legalToLegal, val(s,'Cty pháp nhân')) || directCompanyShort(val(s,'Cty pháp nhân'));
+  if(!legal) legal = lookup(maps.deptToLegal, rawDept) || "";
+  const ngayVao = val(s,'Ngày vào làm');
+  const ngayNghi = val(s,'Ngày nghỉ việc');
+  const ngayBatDau = val(s,'Ngày bắt đầu');
+  const hasQuitDate = !!parseDate(ngayNghi);
+  const trangThai = statusNormalize(val(s,'Trạng thái'));
+  const canhBao = [];
+  if(!rawDept) canhBao.push('Thiếu Phòng ban/Chi nhánh');
+  if(!loc) canhBao.push('Thiếu Nơi làm việc');
+  if(!legal) canhBao.push('Thiếu Pháp nhân');
+  if(!nhomVT) canhBao.push('Thiếu Nhóm vị trí');
+  return {
+    target: {
+      "Khối": calcKhoi(nhomBP, boPhan, nhomVT, maps.deptToKhoi, rawDept),
+      "MNV": idKey(val(s,'Mã NV')),
+      "Họ tên": clean(val(s,'Họ và tên')),
+      "Bộ phận": boPhan,
+      "Nhóm bộ phận": nhomBP,
+      "Vị trí": pos,
+      "Nhóm vị trí": nhomVT,
+      "Nơi làm việc": loc,
+      "Giới tính": clean(val(s,'Giới tính')),
+      "Ngày sinh": fmtDate(val(s,'Ngày Sinh')),
+      "Ngày vào": fmtDate(ngayVao),
+      "Ngày nghỉ": hasQuitDate ? fmtDate(ngayNghi) : "",
+      "Ngày tiếp nhận": fmtDate(ngayBatDau) || fmtDate(ngayVao),
+      "Ngày kết thúc": hasQuitDate ? fmtDate(ngayNghi) : "",
+      "Trạng thái": trangThai,
+      "Ghi chú": "",
+      "Pháp nhân": legal
+    },
+    audit: {
+      "Nguồn_Phòng ban/Chi nhánh": rawDept,
+      "Nguồn_Phòng ban": clean(val(s,'Phòng ban')),
+      "Nguồn_Cty pháp nhân": clean(val(s,'Cty pháp nhân')),
+      "Nguồn_Địa điểm làm việc": rawLoc,
+      "Nguồn_Ngày bắt đầu": fmtDate(ngayBatDau),
+      "Nguồn_Ngày kết thúc": fmtDate(val(s,'Ngày kết thúc')),
+      "Cảnh báo": canhBao.join('; ')
+    }
+  };
+}
+function renderTable(rows, headers, targetId, max=2000){
+  const data = rows.slice(0,max);
+  if(!data.length){ document.getElementById(targetId).innerHTML = '<p class="hint">Không có dữ liệu.</p>'; return; }
+  let html = '<table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  for(const r of data){
+    html += '<tr>' + headers.map(h=>{
+      const v = r[h] ?? '';
+      const cls = h === 'Cảnh báo' && v ? ' class="warn"' : '';
+      return `<td${cls}>${String(v).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))}</td>`;
+    }).join('') + '</tr>';
+  }
+  html += '</tbody></table>';
+  if(rows.length > max) html += `<p class="hint">Đang hiển thị ${max}/${rows.length} dòng.</p>`;
+  document.getElementById(targetId).innerHTML = html;
+}
+function renderMap(mapObj, targetId){
+  const rows = mapObj.details.map(x => ({"Nguồn":x.source, "Kết quả điền":x.target, "Số dòng khớp":x.count, "Tổng mẫu":x.total, "Tỷ lệ":x.rate + '%'}));
+  renderTable(rows, ["Nguồn","Kết quả điền","Số dòng khớp","Tổng mẫu","Tỷ lệ"], targetId, 500);
+}
+function renderRules(maps){
+  const summary = [
+    {"Cột cần điền":"Bộ phận", "Nguồn/quy tắc":"Phòng ban/Chi nhánh → học theo POWERBI.Bộ phận; nếu không học được thì giữ nguyên nguồn"},
+    {"Cột cần điền":"Nhóm bộ phận", "Nguồn/quy tắc":"Phòng ban/Chi nhánh → học theo POWERBI.Nhóm bộ phận"},
+    {"Cột cần điền":"Vị trí", "Nguồn/quy tắc":"Vị trí công việc"},
+    {"Cột cần điền":"Nhóm vị trí", "Nguồn/quy tắc":"Học theo Vị trí công việc/Chức danh; fallback theo từ khóa chức danh"},
+    {"Cột cần điền":"Pháp nhân", "Nguồn/quy tắc":"Cty pháp nhân → tên rút gọn; nếu trống thì học theo bộ phận"},
+    {"Cột cần điền":"Nơi làm việc", "Nguồn/quy tắc":"Địa điểm làm việc; VPĐBP1/VPDDBP1 chuẩn hóa thành VPĐBP; nếu trống thì học theo bộ phận"},
+    {"Cột cần điền":"Ngày vào / Ngày tiếp nhận", "Nguồn/quy tắc":"Ngày vào lấy Ngày vào làm; Ngày tiếp nhận lấy Ngày bắt đầu, nếu trống dùng Ngày vào làm"},
+    {"Cột cần điền":"Ngày nghỉ / Ngày kết thúc", "Nguồn/quy tắc":"Chỉ lấy Ngày nghỉ việc khi có ngày nghỉ; người đang làm để trống"},
+    {"Cột cần điền":"Điều kiện lọc người mới", "Nguồn/quy tắc":"Chỉ lọc theo MNV/Mã NV chưa có trong file báo cáo; không loại theo họ tên vì có thể trùng tên nhưng khác MNV"},
+    {"Cột cần điền":"Khối", "Nguồn/quy tắc":"Nhóm bộ phận sản xuất → Sản xuất; Nhóm vị trí kho → Kho vận; Sales/Bán hàng → Kinh doanh; Bảo hành → Bảo hành; còn lại học theo bộ phận hoặc Văn phòng"}
+  ];
+  renderTable(summary, ["Cột cần điền","Nguồn/quy tắc"], 'ruleSummary', 50);
+  renderMap(maps.deptToGroup, 'mapDept');
+  renderMap(maps.positionToGroup, 'mapPos');
+  renderMap(maps.legalToLegal, 'mapLegal');
+  renderMap(maps.locationToLocation, 'mapLoc');
+}
+function renderKPIs(reportRows, sourceRows, filtered, output){
+  const warnCount = output.filter(r=>r['Cảnh báo']).length;
+  document.getElementById('kpis').innerHTML = [
+    ['Dòng POWERBI', reportRows.length],
+    ['Dòng grReport', sourceRows.length],
+    ['Đạt mốc ngày vào', filtered.length],
+    ['Nhân sự mới', output.length],
+    ['Có cảnh báo', warnCount]
+  ].map(([label,val])=>`<div class="kpi"><b>${val}</b><span>${label}</span></div>`).join('');
+}
+function exportExcel(rows, filename, headers){
+  const ws = XLSX.utils.json_to_sheet(rows, {header:headers});
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Ket_qua');
+  XLSX.writeFile(wb, filename);
+}
+async function run(){
+  const reportFile = document.getElementById('reportFile').files[0];
+  const sourceFile = document.getElementById('sourceFile').files[0];
+  const status = document.getElementById('status');
+  if(!reportFile || !sourceFile){ alert('Anh chọn đủ 2 file giúp em nhé.'); return; }
+  if(!window.XLSX){ alert('Chưa tải được thư viện đọc Excel. Anh kiểm tra kết nối internet rồi mở lại file HTML.'); return; }
+  status.textContent = 'Đang đọc file và học quy tắc từ các MNV đã có...';
+  const [report, source] = await Promise.all([readRows(reportFile, 'POWERBI'), readRows(sourceFile)]);
+  const reportRows = report.rows, sourceRows = source.rows;
+  const repIds = new Set(reportRows.map(r=>idKey(val(r,'MNV'))).filter(Boolean));
+  const maps = {
+    deptToDept: buildMajorMap(sourceRows, reportRows, 'Phòng ban/Chi nhánh', 'Bộ phận'),
+    deptToGroup: buildMajorMap(sourceRows, reportRows, 'Phòng ban/Chi nhánh', 'Nhóm bộ phận'),
+    deptToKhoi: buildMajorMap(sourceRows, reportRows, 'Phòng ban/Chi nhánh', 'Khối'),
+    deptToLocation: buildMajorMap(sourceRows, reportRows, 'Phòng ban/Chi nhánh', 'Nơi làm việc'),
+    deptToLegal: buildMajorMap(sourceRows, reportRows, 'Phòng ban/Chi nhánh', 'Pháp nhân'),
+    positionToGroup: buildMajorMap(sourceRows, reportRows, 'Vị trí công việc', 'Nhóm vị trí'),
+    titleToGroup: buildMajorMap(sourceRows, reportRows, 'Chức danh', 'Nhóm vị trí'),
+    legalToLegal: buildMajorMap(sourceRows, reportRows, 'Cty pháp nhân', 'Pháp nhân'),
+    locationToLocation: buildMajorMap(sourceRows, reportRows, 'Địa điểm làm việc', 'Nơi làm việc')
+  };
+  ruleBook = maps;
+  const start = new Date(document.getElementById('startDate').value + 'T00:00:00Z');
+  const filtered = [];
+  finalRows = []; finalRowsWithAudit = [];
+  sourceRows.forEach(s=>{
+    const d = parseDate(val(s,'Ngày vào làm'));
+    if(!d || d < start) return;
+    filtered.push(s);
+    const mnv = idKey(val(s,'Mã NV'));
+    const exists = mnv && repIds.has(mnv);
+    if(exists) return;
+    const t = transformRow(s, maps);
+    finalRows.push(t.target);
+    finalRowsWithAudit.push({...t.target, ...t.audit});
+  });
+  finalRows.sort((a,b)=>(ymd(a['Ngày vào'])+a['MNV']).localeCompare(ymd(b['Ngày vào'])+b['MNV']));
+  finalRowsWithAudit.sort((a,b)=>(ymd(a['Ngày vào'])+a['MNV']).localeCompare(ymd(b['Ngày vào'])+b['MNV']));
+  renderKPIs(reportRows, sourceRows, filtered, finalRowsWithAudit);
+  renderTable(finalRowsWithAudit, TARGET_HEADERS.concat(AUDIT_HEADERS), 'result', 2000);
+  renderRules(maps);
+  document.getElementById('exportBtn').disabled = finalRows.length === 0;
+  document.getElementById('exportRulesBtn').disabled = false;
+  status.innerHTML = `<span class="ok">Hoàn tất:</span> tìm được ${finalRows.length} nhân sự mới từ ${document.getElementById('startDate').value} theo MNV chưa có trong file báo cáo.`;
+}
+
+document.getElementById('runBtn').addEventListener('click', ()=>run().catch(err=>{ console.error(err); document.getElementById('status').innerHTML = '<span class="bad">Lỗi:</span> ' + err.message; }));
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const includeAudit = document.getElementById('includeAudit').checked;
+  const rows = includeAudit ? finalRowsWithAudit : finalRows;
+  const headers = includeAudit ? TARGET_HEADERS.concat(AUDIT_HEADERS) : TARGET_HEADERS;
+  exportExcel(rows, 'nhan_su_moi_tu_grReport.xlsx', headers);
+});
+document.getElementById('exportRulesBtn').addEventListener('click', ()=>{
+  if(!ruleBook) return;
+  const rows = [];
+  for(const [name,obj] of Object.entries(ruleBook)){
+    obj.details.forEach(x=>rows.push({"Bảng quy tắc":name, "Nguồn":x.source, "Kết quả điền":x.target, "Số dòng khớp":x.count, "Tổng mẫu":x.total, "Tỷ lệ":x.rate + '%'}));
+  }
+  exportExcel(rows, 'bang_quy_tac_hoc_tu_bao_cao.xlsx', ["Bảng quy tắc","Nguồn","Kết quả điền","Số dòng khớp","Tổng mẫu","Tỷ lệ"]);
+});
+document.getElementById('searchBox').addEventListener('input', e=>{
+  const q = norm(e.target.value);
+  const rows = !q ? finalRowsWithAudit : finalRowsWithAudit.filter(r=>Object.values(r).some(v=>norm(v).includes(q)));
+  renderTable(rows, TARGET_HEADERS.concat(AUDIT_HEADERS), 'result', 2000);
+});
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['ruleSummary','mapDept','mapPos','mapLegal','mapLoc'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById(btn.dataset.tab).classList.remove('hidden');
+}));
+</script>
+</body>
+</html>
