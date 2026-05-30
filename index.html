@@ -493,9 +493,9 @@ function addNewSeat(floorId) {
   const prefix = floorId.replace('Tang','T').replace('Trannao','TN');
   const newId  = prefix + '-X' + idx;
   extraSeats[floorId].push({ id: newId, x: 50, y: 50 });
-  localStorage.setItem('extraSeats_vpdbp', JSON.stringify(extraSeats));
+  persist();
   renderSeats(floorId);
-  showToast('Thêm chỗ "' + newId + '" — kéo vào vị trí!', 'ok');
+  showToast('Thêm chỗ "' + newId + '" — đã lưu, anh kéo vào vị trí!', 'ok');
   if (!dragMode) toggleDragMode();
 }
 
@@ -589,11 +589,10 @@ function saveDragPositions() {
       if (es) { es.x = parseFloat(nx); es.y = parseFloat(ny); }
     }
   });
-  localStorage.setItem('seatPos_vpdbp', JSON.stringify(seatPositions));
-  localStorage.setItem('extraSeats_vpdbp', JSON.stringify(extraSeats));
+  persist();
   toggleDragMode();
   renderSeats(activeFloorId);
-  showToast('Lưu vị trí thành công!', 'ok');
+  showToast('Lưu vị trí thành công, đang đồng bộ Supabase!', 'ok');
 }
 
 // ── MODAL ─────────────────────────────────────────
@@ -712,6 +711,9 @@ function getCloudSQL(tableName) {
   updated_at timestamp with time zone not null default now()
 );
 
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on table public.${t} to anon, authenticated;
+
 alter table public.${t} enable row level security;
 
 drop policy if exists "${t}_select" on public.${t};
@@ -722,26 +724,26 @@ drop policy if exists "${t}_delete" on public.${t};
 create policy "${t}_select"
 on public.${t}
 for select
-to anon
+to anon, authenticated
 using (true);
 
 create policy "${t}_insert"
 on public.${t}
 for insert
-to anon
+to anon, authenticated
 with check (true);
 
 create policy "${t}_update"
 on public.${t}
 for update
-to anon
+to anon, authenticated
 using (true)
 with check (true);
 
 create policy "${t}_delete"
 on public.${t}
 for delete
-to anon
+to anon, authenticated
 using (true);`;
 }
 function setCloudStatus(msg, type) {
@@ -813,6 +815,7 @@ function applyCloudPayload(payload) {
 }
 function scheduleCloudSave() {
   if (!supabaseClient || !hasCloudConfig(cloudConfig)) return;
+  setCloudStatus('Đang chờ đồng bộ Supabase...', 'ok');
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(() => saveToSupabase(false), 700);
 }
@@ -833,8 +836,9 @@ async function saveToSupabase(showOk) {
     if (showOk) showToast('Đã lưu lên Supabase!', 'ok');
   } catch (e) {
     console.error('Supabase save error:', e);
-    setCloudStatus('Lỗi lưu Supabase: ' + (e.message || e), 'err');
-    showToast('Lỗi lưu Supabase. Kiểm tra bảng/RLS/key.', 'err');
+    const detail = [e.message, e.details, e.hint, e.code].filter(Boolean).join(' | ');
+    setCloudStatus('Lỗi lưu Supabase: ' + (detail || e), 'err');
+    showToast('Lỗi lưu Supabase. Bấm nút đỏ để xem chi tiết.', 'err');
   }
 }
 async function loadFromSupabase(silent) {
@@ -863,8 +867,9 @@ async function loadFromSupabase(silent) {
     }
   } catch (e) {
     console.error('Supabase load error:', e);
-    setCloudStatus('Lỗi tải Supabase: ' + (e.message || e), 'err');
-    if (!silent) showToast('Không tải được Supabase. Kiểm tra SQL/RLS/key.', 'err');
+    const detail = [e.message, e.details, e.hint, e.code].filter(Boolean).join(' | ');
+    setCloudStatus('Lỗi tải Supabase: ' + (detail || e), 'err');
+    if (!silent) showToast('Không tải được Supabase. Bấm nút đỏ để xem chi tiết.', 'err');
   } finally {
     cloudLoading = false;
   }
