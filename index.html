@@ -318,8 +318,8 @@ const HIDDEN_SEATS = /*__HIDDEN_START__*/{}/*__HIDDEN_END__*/;
 //  Nếu muốn upload xong dùng ngay, điền URL + ANON KEY vào 2 dòng dưới trước khi upload.
 // ═══════════════════════════════════════════════════
 const EMBEDDED_SUPABASE_CONFIG = {
-  url: "",
-  anonKey: "",
+  url: "https://ornjyedmomisxzbahdjb.supabase.co",
+  anonKey: "sb_publishable_rm0DxQNXrJL5uEdUPvJSxw_MuPXgsVP",
   table: "seatmap_state",
   namespace: "vpdbp-main",
   enabled: true
@@ -346,11 +346,17 @@ let cloudLoading = false;
 let cloudLastSavedAt = null;
 
 // ── INIT ──────────────────────────────────────────
+function chooseStartupData(localKey, embeddedObj) {
+  const localObj = jsonParse(localStorage.getItem(localKey), null);
+  if (localObj && typeof localObj === 'object' && Object.keys(localObj).length > 0) return localObj;
+  return Object.keys(embeddedObj || {}).length > 0 ? deepClone(embeddedObj) : {};
+}
+
 async function init() {
-  userData      = Object.keys(INITIAL_DATA).length > 0 ? deepClone(INITIAL_DATA) : jsonParse(localStorage.getItem('seatData_vpdbp'), {});
-  seatPositions = Object.keys(INITIAL_POS).length   > 0 ? deepClone(INITIAL_POS)  : jsonParse(localStorage.getItem('seatPos_vpdbp'), {});
-  extraSeats    = Object.keys(EXTRA_SEATS).length   > 0 ? deepClone(EXTRA_SEATS)  : jsonParse(localStorage.getItem('extraSeats_vpdbp'), {});
-  hiddenSeats   = Object.keys(HIDDEN_SEATS).length  > 0 ? deepClone(HIDDEN_SEATS) : jsonParse(localStorage.getItem('hiddenSeats_vpdbp'), {});
+  userData      = chooseStartupData('seatData_vpdbp', INITIAL_DATA);
+  seatPositions = chooseStartupData('seatPos_vpdbp', INITIAL_POS);
+  extraSeats    = chooseStartupData('extraSeats_vpdbp', EXTRA_SEATS);
+  hiddenSeats   = chooseStartupData('hiddenSeats_vpdbp', HIDDEN_SEATS);
   buildTabs();
   buildFloors();
   showFloor(activeFloorId);
