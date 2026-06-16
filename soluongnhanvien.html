@@ -11,13 +11,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-:root{--bg:#0f1117;--bg2:#161b27;--bg3:#1e2535;--border:#2a3347;--accent:#3b82f6;--accent2:#10b981;--accent3:#f59e0b;--accent4:#ef4444;--accent5:#8b5cf6;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--card:#1a2236;}
+:root{--bg:#070b12;--bg2:#0f1724;--bg3:#182235;--border:#263247;--accent:#38bdf8;--accent2:#22c55e;--accent3:#f59e0b;--accent4:#ef4444;--accent5:#a78bfa;--text:#e5edf7;--text2:#9aa7ba;--text3:#6b778c;--card:#111b2d;--card2:#0b1220;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-.topnav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:300;}
+body{font-family:'Be Vietnam Pro',sans-serif;background:radial-gradient(circle at 20% 0%,rgba(56,189,248,.08),transparent 28%),linear-gradient(180deg,#070b12 0%,#0a0f1b 100%);color:var(--text);min-height:100vh;}
+.topnav{background:rgba(15,23,36,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:300;box-shadow:0 10px 32px rgba(0,0,0,.25);}
 .nav-brand{font-size:15px;font-weight:800;color:var(--accent);padding:14px 0;margin-right:28px;display:flex;align-items:center;gap:8px;}
 .nav-brand span{color:var(--text);}
-.nav-tabs{display:flex;}
+.nav-tabs{display:flex;align-items:center;overflow-x:auto;flex:1;}
 .nav-tab{padding:14px 18px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
 .nav-tab:hover{color:var(--text);}
 .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
@@ -78,7 +78,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
 
 /* KPI */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px;}
-.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;cursor:default;}
+.kpi-card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;cursor:default;box-shadow:0 10px 28px rgba(0,0,0,.18);}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
 .kpi-card.blue::before{background:var(--accent);}
 .kpi-card.green::before{background:var(--accent2);}
@@ -99,7 +99,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
 /* CHARTS */
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
 .chart-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
-.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.chart-card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 10px 28px rgba(0,0,0,.18);}
 .chart-card.full{grid-column:1/-1;}
 .chart-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
 .chart-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -154,6 +154,7 @@ tr:hover td{background:rgba(59,130,246,.04);}
     <div class="nav-tab" onclick="showPage('bieudo',this)">📈 Biến động</div>
     <div class="nav-tab" onclick="showPage('danhsach',this)">👥 Danh sách</div>
     <div class="nav-tab" onclick="showPage('phapnhan',this)">🏢 Pháp nhân</div>
+    <div class="nav-tab" onclick="showPage('phongban',this)">🧩 Phòng ban</div>
     <div class="nav-tab" onclick="showPage('tuoitn',this)">📅 Tuổi & Thâm niên</div>
     <div class="nav-tab" onclick="showPage('bandо',this)">🗺 Bản đồ</div>
     <div class="nav-tab" onclick="showPage('import',this)">📥 Import</div>
@@ -393,6 +394,57 @@ tr:hover td{background:rgba(59,130,246,.04);}
   </div>
 </div>
 
+
+<!-- ===== PHÒNG BAN ===== -->
+<div class="page" id="page-phongban">
+  <div class="filters-bar">
+    <div class="filter-group"><label>Từ ngày</label><input type="text" id="pb-from" placeholder="dd/mm/yyyy" maxlength="10" inputmode="numeric" oninput="autoDateInput(this);renderPhongBan()" onchange="renderPhongBan()"></div>
+    <div class="filter-group"><label>Đến ngày</label><input type="text" id="pb-to" placeholder="dd/mm/yyyy" maxlength="10" inputmode="numeric" oninput="autoDateInput(this);renderPhongBan()" onchange="renderPhongBan()"></div>
+    <div class="filter-group"><label>Pháp nhân</label><div id="ms-pb-pn" class="multi-select"></div></div>
+    <div class="filter-group"><label>Nhóm bộ phận</label><div id="ms-pb-bp" class="multi-select"></div></div>
+    <div class="filter-group"><label>Khối</label><select id="pb-khoi" onchange="renderPhongBan()"><option value="">Tất cả</option></select></div>
+    <div class="filter-group"><label>Trạng thái</label>
+      <select id="pb-tt" onchange="renderPhongBan()"><option value="Đang làm việc">Đang làm việc</option><option value="">Tất cả</option><option value="Nghỉ việc">Nghỉ việc</option></select>
+    </div>
+    <div class="filter-group"><label>Giới tính</label>
+      <select id="pb-gt" onchange="renderPhongBan()"><option value="">Tất cả</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select>
+    </div>
+    <div class="filter-group"><label>Nhóm vị trí</label><div id="ms-pb-nvt" class="multi-select"></div></div>
+    <button class="btn btn-ghost" onclick="clearPBFilters()">↺ Xóa lọc</button>
+  </div>
+
+  <div class="kpi-grid" id="pb-kpi" style="margin-bottom:16px"></div>
+
+  <div class="chart-grid" style="margin-bottom:16px">
+    <div class="chart-card full">
+      <div class="chart-title"><span class="dot" style="background:var(--accent)"></span>Số lượng nhân viên theo Phòng ban</div>
+      <div class="chart-wrap xtall"><canvas id="chart-pb-bar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid" style="margin-bottom:16px">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot" style="background:var(--accent2)"></span>Tỷ lệ Top 10 Phòng ban</div>
+      <div class="chart-wrap tall"><canvas id="chart-pb-pie"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot" style="background:var(--accent5)"></span>Top Nhóm bộ phận</div>
+      <div class="chart-wrap tall"><canvas id="chart-pb-group"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title" id="pb-table-title">Chi tiết Phòng ban</div>
+    <div class="export-btns"><button class="btn btn-success" onclick="exportPBExcel()">⬇ Excel</button></div>
+  </div>
+  <div class="chart-card" style="padding:0">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Phòng ban</th><th>Nhóm bộ phận</th><th>Số lượng</th><th>Tỷ lệ</th><th>Nam</th><th>Nữ</th><th>Đang làm</th><th>Nghỉ việc</th><th>Pháp nhân</th></tr></thead>
+      <tbody id="pb-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
 <!-- ===== TUỔI & THÂM NIÊN ===== -->
 <div class="page" id="page-tuoitn">
   <div class="filters-bar">
@@ -582,7 +634,7 @@ let RAW_DATA = [];
 
 let listPage=1,pnPage=1;
 const PAGE_SIZE=50;
-let filteredList=[],filteredPN=[],filteredCD=[];
+let filteredList=[],filteredPN=[],filteredCD=[],filteredPB=[];
 const MONTHS=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
 const COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6','#a78bfa','#fb7185','#facc15','#4ade80','#38bdf8'];
 const charts={};
@@ -793,24 +845,24 @@ function init(){
     el.value=years[years.length-1]||'';
   });
   // Khối selects
-  ['dash-khoi','list-khoi'].forEach(id=>{
+  ['dash-khoi','list-khoi','pb-khoi'].forEach(id=>{
     const el=document.getElementById(id);if(!el) return;
     khois.forEach(k=>el.add(new Option(k,k)));
   });
 
   // Multi-selects Pháp nhân
-  ['ms-dash-pn','ms-trend-pn','ms-nghi-pn','ms-moi-pn','ms-list-pn','ms-pn-filter','ms-cd-pn'].forEach(id=>{
+  ['ms-dash-pn','ms-trend-pn','ms-nghi-pn','ms-moi-pn','ms-list-pn','ms-pn-filter','ms-cd-pn','ms-pb-pn'].forEach(id=>{
     createMultiSelect(id, pns, ()=>onMSChange(id));
   });
   // Multi-selects Bộ phận
-  ['ms-dash-bp','ms-trend-bp','ms-nghi-bp','ms-moi-bp','ms-list-bp','ms-pn-bp','ms-cd-bp'].forEach(id=>{
+  ['ms-dash-bp','ms-trend-bp','ms-nghi-bp','ms-moi-bp','ms-list-bp','ms-pn-bp','ms-cd-bp','ms-pb-bp'].forEach(id=>{
     createMultiSelect(id, bps, ()=>onMSChange(id));
   });
 
   const today=dateObjToISO(new Date());
   const yr=new Date().getFullYear();
-  ['dash-from','cd-from'].forEach(id=>{const el=document.getElementById(id);if(el) el.value=`01/01/${yr}`;});
-  ['dash-to','cd-to'].forEach(id=>{const el=document.getElementById(id);if(el) el.value=fmtDate(today);});
+  ['dash-from','cd-from','pb-from'].forEach(id=>{const el=document.getElementById(id);if(el) el.value=`01/01/${yr}`;});
+  ['dash-to','cd-to','pb-to'].forEach(id=>{const el=document.getElementById(id);if(el) el.value=fmtDate(today);});
 
   // Map filters
   const mapKhois = [...new Set(RAW_DATA.map(r=>r.khoi).filter(Boolean))].sort();
@@ -820,7 +872,7 @@ function init(){
   createMultiSelect('ms-map-nvt', [...new Set(RAW_DATA.map(r=>r.nhomvitri).filter(Boolean))].sort(), ()=>renderMap());
   // NVT for other tabs
   const nvtList = [...new Set(RAW_DATA.map(r=>r.nhomvitri).filter(Boolean))].sort();
-  ['ms-dash-nvt','ms-list-nvt','ms-pn-nvt','ms-tns-nvt','ms-nghi-nvt','ms-moi-nvt','ms-cd-nvt'].forEach(id=>{
+  ['ms-dash-nvt','ms-list-nvt','ms-pn-nvt','ms-tns-nvt','ms-nghi-nvt','ms-moi-nvt','ms-cd-nvt','ms-pb-nvt'].forEach(id=>{
     createMultiSelect(id, nvtList, ()=>onMSChange(id));
   });
   // TNS pn/bp
@@ -839,6 +891,7 @@ function init(){
   renderNghiChart();
   renderMoiChart();
   renderChucDanh();
+  renderPhongBan();
   renderList();
   renderPNPage();
   renderPNSummary();
@@ -853,6 +906,7 @@ function onMSChange(id){
   else if(id.includes('list-')) renderList();
   else if(id.includes('pn-filter')||id.includes('pn-bp')||id.includes('pn-nvt')) renderPNPage();
   else if(id.includes('cd-')) renderChucDanh();
+  else if(id.includes('pb-')) renderPhongBan();
   else if(id.includes('map-')) renderMap();
   else if(id.includes('tns-')||id.includes('age-')) renderTuoiThamNien();
 }
@@ -876,6 +930,7 @@ function getFiltered(opts={}){
   const to=opts.to?parseDate(opts.to):null;
   const pnList=opts.pns||[];
   const bpList=opts.bps||[];
+  const khoiList=opts.khois||[];
   return RAW_DATA.filter(r=>{
     if(opts.dateField){
       const d=parseDate(r[opts.dateField]);
@@ -883,11 +938,12 @@ function getFiltered(opts={}){
       if(to && (!d || d > to)) return false;
     } else {
       const tn=parseDate(r.ngaytiepnhan);
-      const kt=parseDate(r.ngaykettuc);
+      const kt=parseDate(r.ngaykettuc || r.ngaynghi);
       if(from&&to){if(tn&&tn>to) return false;if(kt&&kt<from) return false;}
     }
     if(pnList.length&&!pnList.includes(r.phapnhan)) return false;
     if(bpList.length&&!bpList.includes(r.nhombophan)) return false;
+    if(khoiList.length&&!khoiList.includes(r.khoi)) return false;
     if(opts.khoi&&r.khoi!==opts.khoi) return false;
     if(opts.nvts&&opts.nvts.length&&!opts.nvts.includes(r.nhomvitri)) return false;
     if(opts.gt&&r.gioitinh!==opts.gt) return false;
@@ -895,6 +951,60 @@ function getFiltered(opts={}){
     if(opts.search){const q=opts.search.toLowerCase();if(!r.hoten?.toLowerCase().includes(q)&&!String(r.mnv||'').includes(q)) return false;}
     return true;
   });
+}
+
+// ===== ĐẾM ĐỒNG BỘ THEO TAB TỔNG QUAN =====
+function startOfDay(d){
+  if(!d) return null;
+  const x=new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  return isNaN(x) ? null : x;
+}
+function getPeriodDates(from, to){
+  return {fromDate:startOfDay(from?parseDate(from):null), toDate:startOfDay(to?parseDate(to):null)};
+}
+function getAsOfDate(from, to){
+  const p=getPeriodDates(from,to);
+  return p.toDate || startOfDay(new Date());
+}
+function isActiveAsOf(r, asOf){
+  const status=(r.trangthai||'').toString().trim();
+  const start=startOfDay(parseDate(r.ngaytiepnhan) || parseDate(r.ngayvao));
+  const end=startOfDay(parseDate(r.ngaykettuc) || parseDate(r.ngaynghi));
+  if(asOf){
+    if(start && start>asOf) return false;
+    if(end && end<asOf) return false;
+  }
+  if(status==='Nghỉ việc' && !end) return false;
+  return true;
+}
+function isQuitInPeriod(r, fromDate, toDate){
+  const status=(r.trangthai||'').toString().trim();
+  const end=startOfDay(parseDate(r.ngaykettuc) || parseDate(r.ngaynghi));
+  if(end){
+    if(fromDate && end<fromDate) return false;
+    if(toDate && end>toDate) return false;
+    return true;
+  }
+  return status==='Nghỉ việc' && !fromDate && !toDate;
+}
+function getBaseCountData(opts={}){
+  const clean={...opts};
+  delete clean.tt;
+  return getFiltered(clean);
+}
+function getDisplayDataLikeDashboard(opts={}){
+  const base=getBaseCountData(opts);
+  const {fromDate,toDate}=getPeriodDates(opts.from||'', opts.to||'');
+  const asOf=toDate || startOfDay(new Date());
+  const tt=opts.tt||'';
+  if(tt==='Nghỉ việc') return base.filter(r=>isQuitInPeriod(r, fromDate, toDate));
+  if(tt==='Đang làm việc' || tt==='') return base.filter(r=>isActiveAsOf(r, asOf));
+  return base;
+}
+function getQuitDataLikeDashboard(opts={}){
+  const base=getBaseCountData(opts);
+  const {fromDate,toDate}=getPeriodDates(opts.from||'', opts.to||'');
+  return base.filter(r=>isQuitInPeriod(r, fromDate, toDate));
 }
 
 // ===== CHART FACTORY =====
@@ -915,13 +1025,8 @@ function renderDashboard(){
   const nvts=getMSVals('ms-dash-nvt');
   const tt=document.getElementById('dash-tt').value;
   const gt=document.getElementById('dash-gt').value;
-  const data=getFiltered({from,to,pns,bps,khoi,nvts,tt,gt});
-  const active=tt?data:data.filter(r=>r.trangthai==='Đang làm việc');
-  const fromDate=from?parseDate(from):null;
-  const toDate=to?parseDate(to):null;
-  const nghi=(fromDate&&toDate)
-    ?data.filter(r=>{const d=parseDate(r.ngaykettuc);return r.trangthai==='Nghỉ việc'&&d&&d>=fromDate&&d<=toDate;})
-    :data.filter(r=>r.trangthai==='Nghỉ việc');
+  const active=getDisplayDataLikeDashboard({from,to,pns,bps,khoi,nvts,tt,gt});
+  const nghi=getQuitDataLikeDashboard({from,to,pns,bps,khoi,nvts,gt});
   const nam=active.filter(r=>r.gioitinh==='Nam').length;
   const nu=active.filter(r=>r.gioitinh==='Nữ').length;
 
@@ -962,7 +1067,7 @@ function renderDashboard(){
 
   const khoiCount={};active.forEach(r=>{if(r.khoi) khoiCount[r.khoi]=(khoiCount[r.khoi]||0)+1;});
   makeChart('chart-khoi',{type:'pie',
-    data:{labels:Object.keys(khoiCount),datasets:[{data:Object.values(khoiCount),backgroundColor:['#3b82f6','#10b981','#f59e0b'],borderWidth:0}]},
+    data:{labels:Object.keys(khoiCount),datasets:[{data:Object.values(khoiCount),backgroundColor:Object.keys(khoiCount).map((_,i)=>COLORS[i%COLORS.length]),borderWidth:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Be Vietnam Pro'}}},
       datalabels:{...DL,formatter:(v,c)=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return t?`${v.toLocaleString()}\n(${(v/t*100).toFixed(1)}%)`:'';},color:'#fff',textAlign:'center'}}}
   });
@@ -1090,6 +1195,159 @@ function clearCDFilters(){
   renderChucDanh();
 }
 
+
+// ===== PHÒNG BAN =====
+function getPhongBanName(r){
+  // Đồng bộ với Tab Tổng quan và biểu đồ Top Nhóm bộ phận: dùng Nhóm bộ phận làm cấp đếm chính.
+  const name = (r.nhombophan || r.bophan || '').toString().trim();
+  return name || 'Chưa xác định';
+}
+
+function getEmployeeCountKey(r, idx){
+  const mnv = (r.mnv || '').toString().trim();
+  if(mnv) return 'MNV:' + mnv.toUpperCase();
+  return 'ROW:' + idx;
+}
+
+function dedupePhongBanEmployees(data){
+  const m = new Map();
+  (data || []).forEach((r, idx) => {
+    // Nếu trùng MNV, giữ dòng xuất hiện sau cùng để đồng bộ cách import/cập nhật dữ liệu hiện có.
+    m.set(getEmployeeCountKey(r, idx), r);
+  });
+  return [...m.values()];
+}
+
+function renderPhongBan(){
+  const from=document.getElementById('pb-from')?.value || '';
+  const to=document.getElementById('pb-to')?.value || '';
+  const pns=getMSVals('ms-pb-pn');
+  const bps=getMSVals('ms-pb-bp');
+  const khoi=document.getElementById('pb-khoi')?.value || '';
+  const nvts=getMSVals('ms-pb-nvt');
+  const tt=document.getElementById('pb-tt')?.value || '';
+  const gt=document.getElementById('pb-gt')?.value || '';
+
+  // Dùng đúng cùng hàm đếm với Tab Tổng quan, sau đó chuẩn hóa theo MNV để biểu đồ không cộng dư nhân viên.
+  filteredPB=dedupePhongBanEmployees(getDisplayDataLikeDashboard({from,to,pns,bps,khoi,nvts,tt,gt}));
+
+  const total=filteredPB.length;
+  const active=filteredPB.filter(r=>r.trangthai==='Đang làm việc').length;
+  const quit=filteredPB.filter(r=>r.trangthai==='Nghỉ việc').length;
+  const deptSet=[...new Set(filteredPB.map(getPhongBanName))];
+  const groupSet=[...new Set(filteredPB.map(r=>r.nhombophan).filter(Boolean))];
+
+  const kpi=document.getElementById('pb-kpi');
+  if(kpi){
+    kpi.innerHTML=`
+      <div class="kpi-card blue"><div class="kpi-icon">👥</div><div class="kpi-val">${total.toLocaleString()}</div><div class="kpi-label">Nhân viên đang hiển thị</div></div>
+      <div class="kpi-card green"><div class="kpi-icon">✅</div><div class="kpi-val">${active.toLocaleString()}</div><div class="kpi-label">Đang làm việc</div></div>
+      <div class="kpi-card red"><div class="kpi-icon">🚪</div><div class="kpi-val">${quit.toLocaleString()}</div><div class="kpi-label">Nghỉ việc</div></div>
+      <div class="kpi-card yellow"><div class="kpi-icon">🧩</div><div class="kpi-val">${deptSet.length.toLocaleString()}</div><div class="kpi-label">Phòng ban</div></div>
+      <div class="kpi-card purple"><div class="kpi-icon">♂</div><div class="kpi-val">${filteredPB.filter(r=>r.gioitinh==='Nam').length.toLocaleString()}</div><div class="kpi-label">Nam</div></div>
+      <div class="kpi-card violet"><div class="kpi-icon">♀</div><div class="kpi-val">${filteredPB.filter(r=>r.gioitinh==='Nữ').length.toLocaleString()}</div><div class="kpi-label">Nữ</div></div>
+    `;
+  }
+
+  const deptMap={};
+  filteredPB.forEach(r=>{
+    const dept=getPhongBanName(r);
+    if(!deptMap[dept]) deptMap[dept]={count:0,nam:0,nu:0,active:0,quit:0,groups:new Set(),pns:new Set()};
+    const x=deptMap[dept];
+    x.count++;
+    if(r.gioitinh==='Nam') x.nam++;
+    if(r.gioitinh==='Nữ') x.nu++;
+    if(r.trangthai==='Đang làm việc') x.active++;
+    if(r.trangthai==='Nghỉ việc') x.quit++;
+    if(r.nhombophan) x.groups.add(r.nhombophan);
+    if(r.phapnhan) x.pns.add(r.phapnhan);
+  });
+  const rows=Object.entries(deptMap)
+    .map(([dept,v])=>({dept,...v,groups:[...v.groups],pns:[...v.pns]}))
+    .sort((a,b)=>b.count-a.count||a.dept.localeCompare(b.dept,'vi'));
+  const chartTotal = rows.reduce((sum, x) => sum + x.count, 0);
+
+  const tableTitle=document.getElementById('pb-table-title');
+  if(tableTitle) tableTitle.textContent=`Chi tiết Phòng ban (${chartTotal.toLocaleString()} người)`;
+
+  // Biểu đồ Phòng ban hiển thị toàn bộ phòng ban; tổng số cột luôn bằng tổng nhân viên đang hiển thị.
+  const chartWrap=document.getElementById('chart-pb-bar')?.parentElement;
+  if(chartWrap) chartWrap.style.height = rows.length>18 ? '420px' : '340px';
+  makeChart('chart-pb-bar',{type:'bar',
+    data:{labels:rows.map(x=>x.dept),datasets:[{data:rows.map(x=>x.count),backgroundColor:rows.map((_,i)=>COLORS[i%COLORS.length]),borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},datalabels:{...DL,anchor:'end',align:'top',color:'#94a3b8',formatter:v=>v>0?v.toLocaleString():''}},
+      scales:{
+        x:{ticks:{color:'#94a3b8',font:{size:10},autoSkip:false,maxRotation:60,minRotation:35},grid:{display:false}},
+        y:{beginAtZero:true,ticks:{color:'#64748b'},grid:{color:'#2a3347'}}
+      }}
+  });
+
+  const topPie=rows.slice(0,10);
+  const other=rows.slice(10).reduce((s,x)=>s+x.count,0);
+  const pieRows=other>0?[...topPie,{dept:'Khác',count:other}]:topPie;
+  makeChart('chart-pb-pie',{type:'doughnut',
+    data:{labels:pieRows.map(x=>x.dept),datasets:[{data:pieRows.map(x=>x.count),backgroundColor:pieRows.map((_,i)=>COLORS[i%COLORS.length]),borderWidth:1,borderColor:'#111b2d'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{family:'Be Vietnam Pro',size:10},boxWidth:10,padding:8}},
+      datalabels:{...DL,formatter:(v,c)=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);const pct=t?(v/t*100):0;return pct>=4?`${pct.toFixed(1)}%`:'';},color:'#fff',font:{size:10,weight:'700'}}}}
+  });
+
+  const groupCount={};
+  filteredPB.forEach(r=>{const g=r.nhombophan||'Chưa xác định';groupCount[g]=(groupCount[g]||0)+1;});
+  const groupTop=Object.entries(groupCount).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  makeChart('chart-pb-group',{type:'bar',
+    data:{labels:groupTop.map(x=>x[0]),datasets:[{data:groupTop.map(x=>x[1]),backgroundColor:groupTop.map((_,i)=>COLORS[(i+3)%COLORS.length]),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},datalabels:{...DL,anchor:'end',align:'end',color:'#94a3b8',padding:{right:4},formatter:v=>v>0?v.toLocaleString():''}},
+      scales:{x:{ticks:{color:'#64748b'},grid:{color:'#2a3347'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}
+  });
+
+  const tbody=document.getElementById('pb-tbody');
+  if(!tbody) return;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="9" class="no-data">Không có dữ liệu</td></tr>';return;}
+  tbody.innerHTML=rows.map((x,i)=>`<tr>
+    <td style="font-weight:600">${x.dept}</td>
+    <td style="color:var(--text2);font-size:11px">${x.groups.join(', ')||'—'}</td>
+    <td style="font-family:monospace;color:var(--accent);font-weight:700">${x.count.toLocaleString()}</td>
+    <td><div style="display:flex;align-items:center;gap:6px">
+      <div style="background:var(--bg3);border-radius:3px;height:5px;width:86px">
+        <div style="background:${COLORS[i%COLORS.length]};height:100%;width:${chartTotal?(x.count/chartTotal*100).toFixed(0):0}%;border-radius:3px"></div>
+      </div>
+      <span style="font-size:11px;color:var(--text3)">${chartTotal?((x.count/chartTotal)*100).toFixed(1):0}%</span>
+    </div></td>
+    <td style="color:var(--accent2)">${x.nam.toLocaleString()}</td>
+    <td style="color:#ec4899">${x.nu.toLocaleString()}</td>
+    <td><span class="badge badge-green">${x.active.toLocaleString()}</span></td>
+    <td><span class="badge badge-red">${x.quit.toLocaleString()}</span></td>
+    <td style="color:var(--text2);font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${x.pns.join(', ')}">${x.pns.join(', ')||'—'}</td>
+  </tr>`).join('');
+}
+
+function clearPBFilters(){
+  clearMS('ms-pb-pn');clearMS('ms-pb-bp');clearMS('ms-pb-nvt');
+  document.getElementById('pb-khoi').value='';
+  document.getElementById('pb-tt').value='Đang làm việc';
+  document.getElementById('pb-gt').value='';
+  const yr=new Date().getFullYear();
+  document.getElementById('pb-from').value=`01/01/${yr}`;
+  document.getElementById('pb-to').value=fmtDate(dateObjToISO(new Date()));
+  renderPhongBan();
+}
+
+function exportPBExcel(){
+  const rows=[];
+  filteredPB.forEach(r=>rows.push({
+    'Phòng ban':getPhongBanName(r),'Nhóm bộ phận':r.nhombophan||'',
+    'MNV':r.mnv||'','Họ tên':r.hoten||'','Vị trí':r.vitri||'',
+    'Nhóm vị trí':r.nhomvitri||'','Giới tính':r.gioitinh||'',
+    'Ngày vào':fmtDate(r.ngayvao),'Ngày nghỉ':fmtDate(r.ngaynghi),
+    'Trạng thái':r.trangthai||'','Pháp nhân':r.phapnhan||'','Khối':r.khoi||''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'PhongBan');
+  XLSX.writeFile(wb,'BaoCao_PhongBan.xlsx');
+}
+
 // ===== BIẾN ĐỘNG =====
 
 const LINE_COLORS=['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#f97316'];
@@ -1195,20 +1453,73 @@ function renderListTable(){
 }
 
 // ===== PHÁP NHÂN =====
+function getPNFilteredData(opts={}){
+  const ignorePN=!!opts.ignorePN;
+  const pns=ignorePN?[]:getMSVals('ms-pn-filter');
+  const bps=getMSVals('ms-pn-bp');
+  const nvts=getMSVals('ms-pn-nvt');
+  const gt=document.getElementById('pn-gt')?.value || '';
+  const tt=document.getElementById('pn-tt')?.value || '';
+  const search=document.getElementById('pn-search')?.value || '';
+  const asOf=startOfDay(new Date());
+
+  let data=RAW_DATA.filter(r=>{
+    if(pns.length&&!pns.includes(r.phapnhan)) return false;
+    if(bps.length&&!bps.includes(r.nhombophan)) return false;
+    if(nvts.length&&!nvts.includes(r.nhomvitri)) return false;
+    if(gt&&r.gioitinh!==gt) return false;
+    if(search){
+      const q=search.toLowerCase();
+      if(!r.hoten?.toLowerCase().includes(q)&&!String(r.mnv||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  if(tt==='Đang làm việc'){
+    data=data.filter(r=>isActiveAsOf(r,asOf));
+  } else if(tt==='Nghỉ việc'){
+    data=data.filter(r=>isQuitInPeriod(r,null,null) || !isActiveAsOf(r,asOf));
+  }
+  // Chuẩn hóa theo MNV để phần Pháp nhân & Số lượng và Danh sách nhân sự không cộng dư dòng trùng.
+  return dedupePhongBanEmployees(data);
+}
+
 function renderPNSummary(){
+  const summaryData=getPNFilteredData({ignorePN:true});
+  const selectedPns=getMSVals('ms-pn-filter');
   const cnt={};
-  RAW_DATA.filter(r=>r.trangthai==='Đang làm việc').forEach(r=>{const k=r.phapnhan||'Chưa xác định';cnt[k]=(cnt[k]||0)+1;});
-  const sorted=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  summaryData.forEach(r=>{
+    const k=(r.phapnhan||'Chưa xác định').toString().trim()||'Chưa xác định';
+    cnt[k]=(cnt[k]||0)+1;
+  });
+  let sorted=Object.entries(cnt).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'vi'));
+  if(selectedPns.length){
+    const selectedSet=new Set(selectedPns);
+    const selectedRows=sorted.filter(([pn])=>selectedSet.has(pn));
+    const otherRows=sorted.filter(([pn])=>!selectedSet.has(pn));
+    sorted=[...selectedRows,...otherRows];
+  }
   const total=sorted.reduce((s,x)=>s+x[1],0);
-  document.getElementById('pn-list').innerHTML=sorted.map(([pn,c])=>`
-    <div style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s"
-      onclick="quickSelectPN('${pn}')" onmouseover="this.style.background='rgba(59,130,246,.07)'" onmouseout="this.style.background=''">
+  const el=document.getElementById('pn-list');
+  if(!el) return;
+  if(!sorted.length){
+    el.innerHTML='<div class="no-data" style="padding:24px 12px">Không có dữ liệu</div>';
+    return;
+  }
+  el.innerHTML=sorted.map(([pn,c])=>{
+    const safePN=JSON.stringify(pn);
+    const pct=total?(c/total*100):0;
+    const isSel=selectedPns.includes(pn);
+    return `
+    <div style="padding:9px 12px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s;${isSel?'background:rgba(59,130,246,.12);':''}"
+      onclick="quickSelectPN(${safePN})" onmouseover="this.style.background='rgba(59,130,246,.07)'" onmouseout="this.style.background='${isSel?'rgba(59,130,246,.12)':''}'">
       <span style="font-size:12px;font-weight:500">${pn}</span>
       <div style="display:flex;align-items:center;gap:7px">
-        <div style="background:var(--bg3);border-radius:2px;height:4px;width:48px"><div style="background:var(--accent);height:100%;width:${(c/total*100).toFixed(0)}%;border-radius:2px"></div></div>
-        <span class="badge badge-blue" style="font-family:monospace;min-width:34px;text-align:center">${c}</span>
+        <div style="background:var(--bg3);border-radius:2px;height:4px;width:48px"><div style="background:var(--accent);height:100%;width:${pct.toFixed(0)}%;border-radius:2px"></div></div>
+        <span class="badge badge-blue" style="font-family:monospace;min-width:34px;text-align:center">${c.toLocaleString()}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function quickSelectPN(pn){
   clearMS('ms-pn-filter');
@@ -1216,21 +1527,8 @@ function quickSelectPN(pn){
   renderPNPage();
 }
 function renderPNPage(){
-  const pns=getMSVals('ms-pn-filter');
-  const bps=getMSVals('ms-pn-bp');
-  const nvts=getMSVals('ms-pn-nvt');
-  const gt=document.getElementById('pn-gt').value;
-  const tt=document.getElementById('pn-tt').value;
-  const search=document.getElementById('pn-search').value;
-  filteredPN=RAW_DATA.filter(r=>{
-    if(pns.length&&!pns.includes(r.phapnhan)) return false;
-    if(bps.length&&!bps.includes(r.nhombophan)) return false;
-    if(nvts.length&&!nvts.includes(r.nhomvitri)) return false;
-    if(gt&&r.gioitinh!==gt) return false;
-    if(tt&&r.trangthai!==tt) return false;
-    if(search){const q=search.toLowerCase();if(!r.hoten?.toLowerCase().includes(q)&&!String(r.mnv||'').includes(q)) return false;}
-    return true;
-  });
+  filteredPN=getPNFilteredData({ignorePN:false});
+  renderPNSummary();
   pnPage=1;renderPNTable();
 }
 function renderPNTable(){
@@ -1240,7 +1538,12 @@ function renderPNTable(){
   const page=sortedPN.slice(start,start+PAGE_SIZE);
   document.getElementById('pn-table-title').textContent=`Danh sách nhân sự (${total.toLocaleString()} người)`;
   const tbody=document.getElementById('pn-tbody');
-  if(!page.length){tbody.innerHTML='<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>';return;}
+  if(!page.length){
+    tbody.innerHTML='<tr><td colspan="11" class="no-data">Không có dữ liệu</td></tr>';
+    document.getElementById('pn-page-info').textContent='0–0 / 0';
+    document.getElementById('pn-page-btns').innerHTML='';
+    return;
+  }
   tbody.innerHTML=page.map((r,i)=>`<tr>
     <td style="color:var(--text3)">${start+i+1}</td>
     <td style="font-family:monospace;color:var(--accent)">${r.mnv||''}</td>
@@ -1251,7 +1554,7 @@ function renderPNTable(){
     <td>${fmtDate(r.ngayvao)||'<span style="color:var(--text3)">—</span>'}</td>
     <td>${fmtDate(r.ngaynghi)||'<span style="color:var(--text3)">—</span>'}</td>
     <td>${fmtDate(r.ngaytiepnhan)}</td>
-    <td><span class="badge ${r.trangthai==='Đang làm việc'?'badge-green':'badge-red'}">${r.trangthai||''}</span></td>
+    <td><span class="badge ${isActiveAsOf(r,startOfDay(new Date()))?'badge-green':'badge-red'}">${isActiveAsOf(r,startOfDay(new Date()))?'Đang làm việc':'Nghỉ việc'}</span></td>
     <td><span class="badge badge-blue">${r.phapnhan||'—'}</span></td>
   </tr>`).join('');
   renderPagination('pn-page-info','pn-page-btns',total,pnPage,p=>{pnPage=p;renderPNTable();});
@@ -1423,7 +1726,7 @@ function processImport(file){
       saveToStorage();
       const msg=`✅ <strong>${added}</strong> mới, <strong>${updated}</strong> cập nhật. Tổng: <strong>${RAW_DATA.length.toLocaleString()}</strong> nhân viên.<br><small style="color:var(--text3)">💾 Đã lưu tự động vào trình duyệt</small>`;
       document.getElementById('import-status').innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:12px">${msg}</div>`;
-      renderDashboard();renderChucDanh();renderList();renderPNPage();renderPNSummary();updateStatsBar(RAW_DATA);
+      renderDashboard();renderChucDanh();renderPhongBan();renderList();renderPNPage();renderPNSummary();updateStatsBar(RAW_DATA);
     }catch(err){document.getElementById('import-status').innerHTML=`<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px">❌ Lỗi: ${err.message}</div>`;}
   };
   reader.readAsBinaryString(file);
@@ -1441,6 +1744,7 @@ function showPage(id,el){
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
   if(id==='chucdanh') renderChucDanh();
+  if(id==='phongban') renderPhongBan();
   if(id==='tuoitn') renderTuoiThamNien();
   if(id==='bandо') { setTimeout(()=>{ renderMap(); if(mapInstance) mapInstance.invalidateSize(); }, 100); }
 }
@@ -1457,58 +1761,172 @@ function clearDashFilters(){
 
 // ===== BẢN ĐỒ =====
 const GEO_BASE = [{"name":"Long An","lat":10.5353,"lng":106.4136,"count":203},{"name":"Biên Hòa","lat":10.9447,"lng":106.8243,"count":144},{"name":"Hố Nai","lat":10.9724,"lng":106.8718,"count":0},{"name":"VPĐBP","lat":10.8057,"lng":106.7095,"count":137},{"name":"Rạch Giá","lat":10.0125,"lng":105.0805,"count":65},{"name":"Tân Bình","lat":10.7936,"lng":106.6258,"count":35},{"name":"An Lạc","lat":10.7484,"lng":106.6358,"count":32},{"name":"Bắc Ninh","lat":21.186,"lng":106.0764,"count":31},{"name":"Hải Phòng","lat":20.8449,"lng":106.6881,"count":29},{"name":"Cần Thơ","lat":10.0452,"lng":105.7469,"count":27},{"name":"Hà Nội","lat":21.0285,"lng":105.8542,"count":23},{"name":"Trần Não","lat":10.7870,"lng":106.7471,"count":19},{"name":"Đà Nẵng","lat":16.0544,"lng":108.2022,"count":14},{"name":"Vinh","lat":19.2342,"lng":104.92,"count":13},{"name":"Quy Nhơn","lat":13.782,"lng":109.219,"count":12},{"name":"Nha Trang","lat":12.2388,"lng":109.1967,"count":10},{"name":"Phú Thọ","lat":21.3227,"lng":105.4026,"count":8},{"name":"Hải Phòng - Vsip","lat":20.9228,"lng":106.8020,"count":8},{"name":"Tiền Giang","lat":10.3765,"lng":106.3439,"count":7},{"name":"Phan Thiết","lat":11.0904,"lng":108.0721,"count":7},{"name":"VPĐBP1","lat":10.8057,"lng":106.7095,"count":6},{"name":"Campuchia","lat":11.5625,"lng":104.916,"count":6},{"name":"Huế","lat":16.4637,"lng":107.5909,"count":5},{"name":"Buôn Ma Thuột","lat":12.6675,"lng":108.0387,"count":4},{"name":"Phú Quốc","lat":10.2899,"lng":103.984,"count":4},{"name":"Hải Phòng - Đình Vũ","lat":20.8633,"lng":106.8025,"count":4},{"name":"Quảng Ngãi","lat":15.1214,"lng":108.805,"count":4},{"name":"KV Hồ Chí Minh","lat":10.7626,"lng":106.6602,"count":4},{"name":"Thanh Hóa","lat":19.8079,"lng":105.7764,"count":4},{"name":"Kiên Giang","lat":10.0125,"lng":105.0805,"count":3},{"name":"KV Hà Nội","lat":21.0285,"lng":105.8542,"count":3},{"name":"Hồ Chí Minh","lat":10.7626,"lng":106.6602,"count":3},{"name":"An Giang","lat":10.5216,"lng":105.1259,"count":2},{"name":"Bình Phú","lat":10.7547,"lng":106.6638,"count":2},{"name":"KV Quy Nhơn","lat":13.782,"lng":109.219,"count":2},{"name":"KV Đà Nẵng","lat":16.0544,"lng":108.2022,"count":2},{"name":"KV Đồng Nai","lat":10.9447,"lng":106.8243,"count":2},{"name":"Qui Nhơn","lat":13.782,"lng":109.219,"count":1},{"name":"Nam Định","lat":20.4339,"lng":106.1773,"count":1},{"name":"Tây Ninh","lat":11.3552,"lng":106.1099,"count":1},{"name":"Bình Thuận","lat":11.0904,"lng":108.0721,"count":1},{"name":"Bình Phước","lat":11.7512,"lng":106.7235,"count":1},{"name":"KV Quảng Ngãi","lat":15.1214,"lng":108.805,"count":1},{"name":"KV Long An","lat":10.5353,"lng":106.4136,"count":1},{"name":"KV Vĩnh Phúc","lat":21.3089,"lng":105.6049,"count":1},{"name":"KV Khánh Hòa","lat":12.2388,"lng":109.1967,"count":1},{"name":"KV Hà Nội + Sơn La","lat":21.0285,"lng":105.8542,"count":1},{"name":"KV Lâm Đồng","lat":11.9404,"lng":108.4583,"count":1},{"name":"KV Nghệ An","lat":19.2342,"lng":104.92,"count":1},{"name":"KV Bình Định + Phú Yên","lat":13.782,"lng":109.219,"count":1},{"name":"KV Hải Phòng + Quảng Ninh","lat":20.8449,"lng":106.6881,"count":1},{"name":"KV Gia Lai","lat":13.8079,"lng":108.109,"count":1},{"name":"KV Thừa Thiên Huế","lat":16.4637,"lng":107.5909,"count":1},{"name":"KV Hải Phòng","lat":20.8449,"lng":106.6881,"count":1}];
+
+// Tọa độ bổ sung để Tab Bản đồ không bỏ sót nhân sự khi dữ liệu import có Nơi làm việc mới/chưa có trong GEO_BASE.
+const GEO_EXTRA = [
+  {name:'Văn phòng Điện Biên Phủ',lat:10.8057,lng:106.7095},{name:'Điện Biên Phủ',lat:10.8057,lng:106.7095},
+  {name:'TP Hồ Chí Minh',lat:10.7626,lng:106.6602},{name:'TP.HCM',lat:10.7626,lng:106.6602},{name:'Sài Gòn',lat:10.7626,lng:106.6602},
+  {name:'Thủ Đức',lat:10.8494,lng:106.7538},{name:'Quận 2',lat:10.7873,lng:106.7498},{name:'Bình Tân',lat:10.7653,lng:106.6038},
+  {name:'Bình Dương',lat:10.9804,lng:106.6519},{name:'Thủ Dầu Một',lat:10.9804,lng:106.6519},{name:'Dĩ An',lat:10.9068,lng:106.7694},{name:'Thuận An',lat:10.9319,lng:106.7117},
+  {name:'Đồng Nai',lat:10.9574,lng:106.8427},{name:'Nhơn Trạch',lat:10.7244,lng:106.8775},{name:'Long Thành',lat:10.7895,lng:106.9500},
+  {name:'Bà Rịa - Vũng Tàu',lat:10.5417,lng:107.2429},{name:'Vũng Tàu',lat:10.4114,lng:107.1362},{name:'Bà Rịa',lat:10.4963,lng:107.1684},
+  {name:'Đồng Tháp',lat:10.4938,lng:105.6882},{name:'Sa Đéc',lat:10.2908,lng:105.7563},{name:'Cao Lãnh',lat:10.4594,lng:105.6350},
+  {name:'Vĩnh Long',lat:10.2537,lng:105.9722},{name:'Trà Vinh',lat:9.9347,lng:106.3453},{name:'Bến Tre',lat:10.2434,lng:106.3756},
+  {name:'Sóc Trăng',lat:9.6025,lng:105.9739},{name:'Bạc Liêu',lat:9.2941,lng:105.7278},{name:'Cà Mau',lat:9.1768,lng:105.1524},{name:'Hậu Giang',lat:9.7845,lng:105.4701},
+  {name:'Lâm Đồng',lat:11.9404,lng:108.4583},{name:'Đà Lạt',lat:11.9404,lng:108.4583},{name:'Bảo Lộc',lat:11.5486,lng:107.8078},
+  {name:'Gia Lai',lat:13.8079,lng:108.1094},{name:'Pleiku',lat:13.9833,lng:108.0000},{name:'Kon Tum',lat:14.3497,lng:108.0005},{name:'Đắk Lắk',lat:12.7100,lng:108.2378},{name:'Đắk Nông',lat:12.2646,lng:107.6098},
+  {name:'Phú Yên',lat:13.0882,lng:109.0929},{name:'Tuy Hòa',lat:13.0955,lng:109.3209},{name:'Bình Định',lat:13.7820,lng:109.2190},
+  {name:'Quảng Nam',lat:15.5394,lng:108.0191},{name:'Tam Kỳ',lat:15.5736,lng:108.4740},{name:'Quảng Trị',lat:16.7403,lng:107.1855},{name:'Quảng Bình',lat:17.6103,lng:106.3487},
+  {name:'Hà Tĩnh',lat:18.3559,lng:105.8877},{name:'Nghệ An',lat:19.2342,lng:104.9200},{name:'Ninh Bình',lat:20.2506,lng:105.9744},
+  {name:'Hưng Yên',lat:20.6464,lng:106.0511},{name:'Hải Dương',lat:20.9373,lng:106.3146},{name:'Quảng Ninh',lat:21.0064,lng:107.2925},{name:'Hạ Long',lat:20.9712,lng:107.0448},
+  {name:'Vĩnh Phúc',lat:21.3089,lng:105.6049},{name:'Thái Nguyên',lat:21.5672,lng:105.8252},{name:'Bắc Giang',lat:21.2731,lng:106.1946},{name:'Lạng Sơn',lat:21.8537,lng:106.7615},
+  {name:'Lào Cai',lat:22.4809,lng:103.9755},{name:'Yên Bái',lat:21.7050,lng:104.8755},{name:'Sơn La',lat:21.3270,lng:103.9141},{name:'Hòa Bình',lat:20.8172,lng:105.3376},
+  {name:'Nam Định',lat:20.4388,lng:106.1621},{name:'Thái Bình',lat:20.4463,lng:106.3366},{name:'Hà Nam',lat:20.5835,lng:105.9229},
+  {name:'Tây Ninh',lat:11.3100,lng:106.0983},{name:'Bình Phước',lat:11.7512,lng:106.7235},{name:'Đồng Xoài',lat:11.5349,lng:106.8832},
+  {name:'Khánh Hòa',lat:12.2388,lng:109.1967},{name:'Ninh Thuận',lat:11.6739,lng:108.8620},{name:'Bình Thuận',lat:11.0904,lng:108.0721},{name:'La Gi',lat:10.6599,lng:107.7715},
+  {name:'Miền Bắc',lat:21.0285,lng:105.8542},{name:'Miền Trung',lat:16.0544,lng:108.2022},{name:'Miền Nam',lat:10.7626,lng:106.6602},{name:'Miền Tây',lat:10.0452,lng:105.7469},
+  {name:'Chưa xác định',lat:14.0583,lng:108.2772}
+];
+
+function geoKey(s){
+  return String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+
+const GEO_COORDS = (()=>{
+  const map={};
+  [...GEO_BASE,...GEO_EXTRA].forEach(p=>{ map[geoKey(p.name)]={lat:p.lat,lng:p.lng,canonical:p.name}; });
+  const aliases={
+    'vpdbp':'Văn phòng Điện Biên Phủ','vp dbp':'Văn phòng Điện Biên Phủ','vp dien bien phu':'Văn phòng Điện Biên Phủ','van phong dien bien phu':'Văn phòng Điện Biên Phủ',
+    'hcm':'TP Hồ Chí Minh','tphcm':'TP Hồ Chí Minh','tp hcm':'TP Hồ Chí Minh','ho chi minh':'TP Hồ Chí Minh','ho chi minh city':'TP Hồ Chí Minh',
+    'bien hoa':'Biên Hòa','honai':'Hố Nai','ho nai':'Hố Nai','an lac':'An Lạc','tan binh':'Tân Bình','tran nao':'Trần Não',
+    'hai phong vsip':'Hải Phòng - Vsip','vsip hai phong':'Hải Phòng - Vsip','dinh vu':'Hải Phòng - Đình Vũ','hai phong dinh vu':'Hải Phòng - Đình Vũ',
+    'bmt':'Buôn Ma Thuột','buon me thuot':'Buôn Ma Thuột','phu quoc':'Phú Quốc','rach gia':'Rạch Giá','quy nhon':'Quy Nhơn','qui nhon':'Quy Nhơn',
+    'nha trang':'Nha Trang','phan thiet':'Phan Thiết','tien giang':'Tiền Giang','can tho':'Cần Thơ','bac ninh':'Bắc Ninh','ha noi':'Hà Nội','da nang':'Đà Nẵng','hue':'Huế','vinh':'Vinh',
+    'long an':'Long An','nmla':'Long An','nha may long an':'Long An','nmbh':'Biên Hòa','nha may bien hoa':'Biên Hòa','kho ho nai':'Hố Nai',
+    'campuchia':'Campuchia','cambodia':'Campuchia'
+  };
+  Object.entries(aliases).forEach(([a,n])=>{ const c=map[geoKey(n)]; if(c) map[geoKey(a)]={...c,canonical:n}; });
+  return map;
+})();
+
+function hashMapString(s){
+  let h=0;
+  const str=String(s||'');
+  for(let i=0;i<str.length;i++) h=((h<<5)-h+str.charCodeAt(i))|0;
+  return Math.abs(h);
+}
+function autoCoordsForUnknownLocation(name){
+  // Tạo tọa độ dự phòng cố định theo tên địa điểm để mọi Nơi làm việc đều hiển thị trên bản đồ.
+  // Vùng phủ nằm trong Việt Nam, có lệch nhẹ để các địa điểm thiếu tọa độ không chồng lên nhau.
+  const h=hashMapString(name);
+  const lat=8.8 + (h % 1500) / 100;           // 8.8 → 23.8
+  const lng=102.2 + (Math.floor(h/1500)%800)/100; // 102.2 → 110.2
+  return {lat:+lat.toFixed(4), lng:+lng.toFixed(4), canonical:'Tọa độ tự động', approx:true, auto:true};
+}
+function getCoordsForLocation(name){
+  const raw=String(name||'').trim() || 'Chưa xác định';
+  const key=geoKey(raw);
+  if(GEO_COORDS[key]) return {...GEO_COORDS[key],approx:false};
+
+  // Hỗ trợ trường hợp Nơi làm việc có sẵn tọa độ dạng "lat,lng" hoặc "lat;lng".
+  const m=raw.match(/(-?\d{1,2}(?:\.\d+)?)\s*[,;]\s*(-?\d{2,3}(?:\.\d+)?)/);
+  if(m){
+    const lat=Number(m[1]), lng=Number(m[2]);
+    if(isFinite(lat)&&isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180){
+      return {lat,lng,canonical:raw,approx:false};
+    }
+  }
+
+  // Khớp theo cụm từ: ví dụ "KV Hải Phòng + Quảng Ninh" vẫn lấy được tọa độ chính.
+  const candidates=Object.keys(GEO_COORDS).filter(k=>k && (key.includes(k) || k.includes(key))).sort((a,b)=>b.length-a.length);
+  if(candidates.length) return {...GEO_COORDS[candidates[0]],approx:true};
+  const rules=[
+    ['vpdbp','Văn phòng Điện Biên Phủ'],['vp dbp','Văn phòng Điện Biên Phủ'],['dien bien phu','Văn phòng Điện Biên Phủ'],
+    ['ho chi minh','TP Hồ Chí Minh'],['sai gon','TP Hồ Chí Minh'],['hcm','TP Hồ Chí Minh'],['tphcm','TP Hồ Chí Minh'],['thu duc','Thủ Đức'],['quan 2','Quận 2'],['binh tan','Bình Tân'],
+    ['binh duong','Bình Dương'],['thu dau mot','Thủ Dầu Một'],['di an','Dĩ An'],['thuan an','Thuận An'],
+    ['dong nai','Đồng Nai'],['bien hoa','Biên Hòa'],['ho nai','Hố Nai'],['honai','Hố Nai'],['long thanh','Long Thành'],['nhon trach','Nhơn Trạch'],['long an','Long An'],['nmla','Long An'],['nmbh','Biên Hòa'],
+    ['ba ria','Bà Rịa - Vũng Tàu'],['vung tau','Vũng Tàu'],
+    ['ha noi','Hà Nội'],['hanoi','Hà Nội'],['bac ninh','Bắc Ninh'],['hai phong','Hải Phòng'],['dinh vu','Hải Phòng - Đình Vũ'],['vsip','Hải Phòng - Vsip'],['quang ninh','Quảng Ninh'],['ha long','Hạ Long'],['phu tho','Phú Thọ'],['vinh phuc','Vĩnh Phúc'],['nam dinh','Nam Định'],['thai binh','Thái Bình'],['ha nam','Hà Nam'],['hung yen','Hưng Yên'],['hai duong','Hải Dương'],['thai nguyen','Thái Nguyên'],['bac giang','Bắc Giang'],['lang son','Lạng Sơn'],['lao cai','Lào Cai'],['yen bai','Yên Bái'],['son la','Sơn La'],['hoa binh','Hòa Bình'],
+    ['thanh hoa','Thanh Hóa'],['nghe an','Nghệ An'],['vinh','Vinh'],['ha tinh','Hà Tĩnh'],['quang binh','Quảng Bình'],['quang tri','Quảng Trị'],['hue','Huế'],['da nang','Đà Nẵng'],['quang nam','Quảng Nam'],['tam ky','Tam Kỳ'],['quang ngai','Quảng Ngãi'],
+    ['quy nhon','Quy Nhơn'],['qui nhon','Quy Nhơn'],['binh dinh','Bình Định'],['phu yen','Phú Yên'],['tuy hoa','Tuy Hòa'],['nha trang','Nha Trang'],['khanh hoa','Khánh Hòa'],['ninh thuan','Ninh Thuận'],['phan thiet','Phan Thiết'],['binh thuan','Bình Thuận'],['la gi','La Gi'],
+    ['bmt','Buôn Ma Thuột'],['buon ma thuot','Buôn Ma Thuột'],['buon me thuot','Buôn Ma Thuột'],['dak lak','Đắk Lắk'],['dak nong','Đắk Nông'],['gia lai','Gia Lai'],['pleiku','Pleiku'],['kon tum','Kon Tum'],['lam dong','Lâm Đồng'],['da lat','Đà Lạt'],['bao loc','Bảo Lộc'],
+    ['can tho','Cần Thơ'],['rach gia','Rạch Giá'],['kien giang','Kiên Giang'],['phu quoc','Phú Quốc'],['tien giang','Tiền Giang'],['dong thap','Đồng Tháp'],['sa dec','Sa Đéc'],['cao lanh','Cao Lãnh'],['an giang','An Giang'],['vinh long','Vĩnh Long'],['tra vinh','Trà Vinh'],['ben tre','Bến Tre'],['soc trang','Sóc Trăng'],['bac lieu','Bạc Liêu'],['ca mau','Cà Mau'],['hau giang','Hậu Giang'],
+    ['tay ninh','Tây Ninh'],['binh phuoc','Bình Phước'],['dong xoai','Đồng Xoài'],['campuchia','Campuchia'],['cambodia','Campuchia']
+  ];
+  for(const [token,target] of rules){
+    if(key.includes(token)){ const c=GEO_COORDS[geoKey(target)]; if(c) return {...c,approx:true}; }
+  }
+  return autoCoordsForUnknownLocation(raw);
+}
+
+function getMapLocationName(r){
+  // Tab Bản đồ đếm theo đúng cột Nơi làm việc/Địa điểm làm việc.
+  // Nếu thiếu Nơi làm việc thì gom vào "Chưa xác định" để không mất nhân sự.
+  const loc=(r.noilv || r.noilamviec || r['Nơi làm việc'] || r.diadiemlamviec || '').toString().trim();
+  return loc || 'Chưa xác định';
+}
+
+function adjustOverlappingMapPoints(points){
+  // Các địa điểm khác tên nhưng chung tọa độ sẽ được tách nhẹ để tất cả marker/nhãn đều nhìn thấy.
+  const groups={};
+  points.forEach(p=>{
+    const key=`${Number(p.lat).toFixed(4)},${Number(p.lng).toFixed(4)}`;
+    if(!groups[key]) groups[key]=[];
+    groups[key].push(p);
+  });
+  Object.values(groups).forEach(arr=>{
+    if(arr.length<=1) return;
+    arr.forEach((p,i)=>{
+      const angle=(2*Math.PI*i)/arr.length;
+      const radius=0.035+Math.min(arr.length,8)*0.003;
+      p.lat=+(Number(p.lat)+Math.sin(angle)*radius).toFixed(5);
+      p.lng=+(Number(p.lng)+Math.cos(angle)*radius).toFixed(5);
+      p.approx=true;
+    });
+  });
+  return points;
+}
+
 let mapInstance = null;
 let mapMarkers = [];
 let mapChartInstance = null;
 
+function getMapDashboardDates(){
+  // Bản đồ không có bộ lọc ngày riêng, nên dùng ngày đang chọn ở Tab Tổng quan để đếm đồng bộ.
+  const yr=new Date().getFullYear();
+  return {
+    from: document.getElementById('dash-from')?.value || `01/01/${yr}`,
+    to: document.getElementById('dash-to')?.value || fmtDate(dateObjToISO(new Date()))
+  };
+}
 function isActiveOnMap(r) {
-  // "Đang làm việc" based on ngaytiepnhan and ngaykettuc
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  const tn = r.ngaytiepnhan ? parseDate(r.ngaytiepnhan) : null;
-  const kt = r.ngaykettuc ? parseDate(r.ngaykettuc) : null;
-  if (tn && tn > today) return false; // chưa bắt đầu
-  if (kt && kt < today) return false; // đã kết thúc
-  return true; // đang làm việc
+  const d=getMapDashboardDates();
+  return isActiveAsOf(r, getAsOfDate(d.from, d.to));
 }
 
 function buildGeoFromData(tt, pns, bps, khoi, nvts) {
-  // Recount from RAW_DATA with current filters
-  const filtered = RAW_DATA.filter(r => {
-    if (tt === 'Đang làm việc') {
-      if (!isActiveOnMap(r)) return false;
-    } else if (tt === 'Nghỉ việc') {
-      if (isActiveOnMap(r)) return false;
-    }
-    if (pns && pns.length && !pns.includes(r.phapnhan)) return false;
-    if (bps && bps.length && !bps.includes(r.nhombophan)) return false;
-    if (khoi && r.khoi !== khoi) return false;
-    if (nvts && nvts.length && !nvts.includes(r.nhomvitri)) return false;
-    return true;
-  });
+  // Đếm bằng đúng logic đang dùng để hiển thị nhân viên, nhưng gom theo Nơi làm việc.
+  // Có chuẩn hóa MNV để tránh cộng dư nếu dữ liệu import phát sinh dòng trùng nhân viên.
+  const d=getMapDashboardDates();
+  const filtered = dedupePhongBanEmployees(getDisplayDataLikeDashboard({from:d.from,to:d.to,pns,bps,khoi,nvts,tt}));
 
   const counts = {};
   const employees = {}; // loc -> array of employees
   filtered.forEach(r => {
-    const loc = r.noilv;
-    if (loc) {
-      counts[loc] = (counts[loc] || 0) + 1;
-      if (!employees[loc]) employees[loc] = [];
-      employees[loc].push(r);
-    }
+    const loc = getMapLocationName(r);
+    counts[loc] = (counts[loc] || 0) + 1;
+    if (!employees[loc]) employees[loc] = [];
+    employees[loc].push(r);
   });
-
-  // Merge with base coords
-  const baseCoords = {};
-  GEO_BASE.forEach(p => { baseCoords[p.name] = {lat: p.lat, lng: p.lng}; });
 
   const results = [];
   Object.entries(counts).forEach(([name, count]) => {
-    const c = baseCoords[name];
-    if (c) results.push({name, lat: c.lat, lng: c.lng, count, employees: employees[name] || []});
+    const c = getCoordsForLocation(name);
+    results.push({name, lat: c.lat, lng: c.lng, count, employees: employees[name] || [], approx: !!c.approx, canonical: c.canonical || name});
   });
-  return results.sort((a, b) => b.count - a.count);
+  return adjustOverlappingMapPoints(results.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name,'vi')));
 }
+
 
 function renderMap() {
   const tt   = document.getElementById('map-tt').value;
@@ -1542,7 +1960,7 @@ function renderMap() {
 
   points.forEach(p => {
     const r = Math.max(10, Math.min(50, 10 + (p.count / maxCount) * 40));
-    const pct = (p.count / total * 100).toFixed(1);
+    const pct = total ? (p.count / total * 100).toFixed(1) : '0.0';
 
     // Color gradient: green (small) → yellow → red (large)
     const ratio = p.count / maxCount;
@@ -1564,7 +1982,7 @@ function renderMap() {
       `<div style="font-family:'Be Vietnam Pro',sans-serif;min-width:140px">
         <div style="font-weight:700;font-size:13px;margin-bottom:4px">📍 ${p.name}</div>
         <div style="font-size:15px;font-weight:800;color:#3b82f6">${p.count.toLocaleString()} NV</div>
-        <div style="font-size:11px;color:#94a3b8">${pct}% tổng số</div>
+        <div style="font-size:11px;color:#94a3b8">${pct}% tổng số${p.approx?' · tọa độ gần đúng':''}</div>
       </div>`,
       {permanent: false, direction: 'top', className: 'map-tooltip'}
     );
@@ -1599,8 +2017,8 @@ function renderMap() {
       onmouseover="this.style.background='rgba(59,130,246,.08)'" onmouseout="this.style.background=''">
       <span style="font-size:10px;color:var(--text3);min-width:18px;text-align:right">${i+1}</span>
       <div style="flex:1">
-        <div style="font-size:12px;font-weight:600">${p.name}</div>
-        <div style="font-size:10px;color:var(--text3)">${(p.count/total*100).toFixed(1)}% tổng số</div>
+        <div style="font-size:12px;font-weight:600">${p.name}${p.approx?' <span style="color:var(--accent3);font-size:10px">~</span>':''}</div>
+        <div style="font-size:10px;color:var(--text3)">${total?(p.count/total*100).toFixed(1):'0.0'}% tổng số${p.approx?' · gần đúng':''}</div>
       </div>
       <span style="font-family:monospace;font-size:13px;font-weight:700;color:var(--accent)">${p.count}</span>
     </div>
@@ -1661,7 +2079,7 @@ function showMapEmployeeList(point) {
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <div>
           <div style="font-size:15px;font-weight:800;color:var(--text)">📍 ${point.name}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${sorted.length.toLocaleString()} nhân viên đang làm việc tại địa điểm này</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${sorted.length.toLocaleString()} nhân viên tại địa điểm này</div>
         </div>
         <button onclick="document.getElementById('map-emp-modal').style.display='none'"
           style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:6px 12px;cursor:pointer;font-size:13px;font-family:inherit;">✕ Đóng</button>
@@ -1745,49 +2163,92 @@ const TN_BINS   = [[0,0.5,'<6 tháng'],[0.5,1,'6T–1N'],[1,2,'1–2N'],[2,3,'2�
 const AGE_COLORS= ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
 const TN_COLORS = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316'];
 
-function renderTuoiThamNien() {
-  const tt   = document.getElementById('tns-tt').value;
+function getTNSKhoiVals(){
+  if(msState['ms-tns-khoi']) return getMSVals('ms-tns-khoi');
+  const v=document.getElementById('tns-khoi')?.value || '';
+  return v ? [v] : [];
+}
+
+function getTNSData(){
+  const tt   = document.getElementById('tns-tt')?.value || '';
   const pns  = getMSVals('ms-tns-pn');
   const bps  = getMSVals('ms-tns-bp');
   const nvts = getMSVals('ms-tns-nvt');
-  const khoi = document.getElementById('tns-khoi').value;
-  const data = RAW_DATA.filter(r => {
-    if (tt && r.trangthai !== tt) return false;
+  const khois = getTNSKhoiVals();
+  const asOf = startOfDay(new Date());
+
+  let data = RAW_DATA.filter(r => {
     if (pns.length && !pns.includes(r.phapnhan)) return false;
     if (bps.length && !bps.includes(r.nhombophan)) return false;
     if (nvts.length && !nvts.includes(r.nhomvitri)) return false;
-    if (khoi && r.khoi !== khoi) return false;
+    if (khois.length && !khois.includes(r.khoi)) return false;
     return true;
   });
 
-  const ages = data.map(r => calcAge(r.ngaysinh)).filter(v => v !== null);
-  const tns  = data.map(r => calcTN(r.ngayvao)).filter(v => v !== null);
+  if (tt === 'Đang làm việc') {
+    data = data.filter(r => isActiveAsOf(r, asOf));
+  } else if (tt === 'Nghỉ việc') {
+    data = data.filter(r => isQuitInPeriod(r, null, null) || !isActiveAsOf(r, asOf));
+  }
+
+  // Đếm theo MNV để các KPI, biểu đồ và bảng trong tab Tuổi & Thâm niên không cộng dư dòng trùng.
+  return dedupePhongBanEmployees(data);
+}
+
+function makeMetricRows(data){
+  return data.map(r => ({ r, age: calcAge(r.ngaysinh), tn: calcTN(r.ngayvao) }));
+}
+
+function validMetricValues(rows, key){
+  return rows.map(x => x[key]).filter(v => v !== null && v !== undefined && isFinite(v));
+}
+
+function countMetricBins(rows, key, bins, missingLabel){
+  const counts = bins.map(([lo, hi, label]) => ({label, count: 0, missing: false}));
+  let missing = 0;
+  rows.forEach(row => {
+    const v = row[key];
+    if (v === null || v === undefined || !isFinite(v)) { missing++; return; }
+    const idx = bins.findIndex(([lo, hi]) => v >= lo && v < hi);
+    if (idx >= 0) counts[idx].count++;
+    else missing++;
+  });
+  if (missing > 0) counts.push({label: missingLabel, count: missing, missing: true});
+  return counts;
+}
+
+function metricColors(items, baseColors){
+  return items.map((x, i) => x.missing ? '#64748b' : baseColors[i % baseColors.length]);
+}
+
+function renderTuoiThamNien() {
+  const data = getTNSData();
+  const metricRows = makeMetricRows(data);
+  const ages = validMetricValues(metricRows, 'age');
+  const tns  = validMetricValues(metricRows, 'tn');
   const avgAge = ages.length ? ages.reduce((a,b)=>a+b,0)/ages.length : 0;
   const avgTN  = tns.length  ? tns.reduce((a,b)=>a+b,0)/tns.length   : 0;
-  const minAge = ages.length ? Math.min(...ages) : 0;
-  const maxAge = ages.length ? Math.max(...ages) : 0;
+  const minAge = ages.length ? Math.min(...ages) : null;
+  const maxAge = ages.length ? Math.max(...ages) : null;
 
   // KPI
   document.getElementById('tns-kpi').innerHTML = `
     <div class="kpi-card blue"><div class="kpi-icon">👥</div><div class="kpi-val">${data.length.toLocaleString()}</div><div class="kpi-label">Tổng nhân viên</div></div>
-    <div class="kpi-card green"><div class="kpi-icon">🎂</div><div class="kpi-val">${avgAge.toFixed(1)}</div><div class="kpi-label">Tuổi trung bình</div></div>
-    <div class="kpi-card yellow"><div class="kpi-icon">📅</div><div class="kpi-val">${fmtTN(avgTN)}</div><div class="kpi-label">Thâm niên TB</div></div>
-    <div class="kpi-card purple"><div class="kpi-icon">⬇</div><div class="kpi-val">${Math.floor(minAge)}</div><div class="kpi-label">Tuổi nhỏ nhất</div></div>
-    <div class="kpi-card red"><div class="kpi-icon">⬆</div><div class="kpi-val">${Math.floor(maxAge)}</div><div class="kpi-label">Tuổi lớn nhất</div></div>
-    <div class="kpi-card violet"><div class="kpi-icon">🏆</div><div class="kpi-val">${fmtTN(tns.length?Math.max(...tns):0)}</div><div class="kpi-label">TN dài nhất</div></div>
+    <div class="kpi-card green"><div class="kpi-icon">🎂</div><div class="kpi-val">${ages.length?avgAge.toFixed(1):'—'}</div><div class="kpi-label">Tuổi trung bình</div></div>
+    <div class="kpi-card yellow"><div class="kpi-icon">📅</div><div class="kpi-val">${tns.length?fmtTN(avgTN):'—'}</div><div class="kpi-label">Thâm niên TB</div></div>
+    <div class="kpi-card purple"><div class="kpi-icon">⬇</div><div class="kpi-val">${minAge!==null?Math.floor(minAge):'—'}</div><div class="kpi-label">Tuổi nhỏ nhất</div></div>
+    <div class="kpi-card red"><div class="kpi-icon">⬆</div><div class="kpi-val">${maxAge!==null?Math.floor(maxAge):'—'}</div><div class="kpi-label">Tuổi lớn nhất</div></div>
+    <div class="kpi-card violet"><div class="kpi-icon">🏆</div><div class="kpi-val">${tns.length?fmtTN(Math.max(...tns)):'—'}</div><div class="kpi-label">TN dài nhất</div></div>
   `;
   document.getElementById('tns-table-title').textContent = `Chi tiết theo Nhóm vị trí (${data.length.toLocaleString()} người)`;
 
-  // Count age groups
-  function countBins(vals, bins) {
-    return bins.map(([lo,hi,label]) => ({label, count: vals.filter(v=>v>=lo&&v<hi).length}));
-  }
-  const ageCounts = countBins(ages, AGE_BINS);
-  const tnCounts  = countBins(tns, TN_BINS);
+  // Count age/tenure groups. Có thêm nhóm "Chưa có dữ liệu" để tổng cột/lát = tổng nhân viên đang lọc.
+  const ageCounts = countMetricBins(metricRows, 'age', AGE_BINS, 'Chưa có ngày sinh');
+  const tnCounts  = countMetricBins(metricRows, 'tn', TN_BINS, 'Chưa có ngày vào');
 
   // Age bar
   makeChart('chart-age-bar', {type:'bar',
-    data:{labels:ageCounts.map(x=>x.label),datasets:[{data:ageCounts.map(x=>x.count),backgroundColor:AGE_COLORS,borderRadius:6}]},
+    data:{labels:ageCounts.map(x=>x.label),datasets:[{data:ageCounts.map(x=>x.count),backgroundColor:metricColors(ageCounts, AGE_COLORS),borderRadius:6}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},datalabels:{...DL,anchor:'end',align:'top',color:'#94a3b8',formatter:v=>v>0?v.toLocaleString():''}},
       scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#2a3347'}},y:{ticks:{color:'#64748b'},grid:{color:'#2a3347'}}}}
@@ -1795,7 +2256,7 @@ function renderTuoiThamNien() {
 
   // Age pie
   makeChart('chart-age-pie', {type:'doughnut',
-    data:{labels:ageCounts.map(x=>x.label),datasets:[{data:ageCounts.map(x=>x.count),backgroundColor:AGE_COLORS,borderWidth:1,borderColor:'#1a2236'}]},
+    data:{labels:ageCounts.map(x=>x.label),datasets:[{data:ageCounts.map(x=>x.count),backgroundColor:metricColors(ageCounts, AGE_COLORS),borderWidth:1,borderColor:'#1a2236'}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},boxWidth:10}},
         datalabels:{...DL,formatter:(v,c)=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return t&&v>0?`${(v/t*100).toFixed(1)}%`:'';},color:'#fff',font:{size:10,weight:'700'}}}}
@@ -1803,7 +2264,7 @@ function renderTuoiThamNien() {
 
   // TN bar
   makeChart('chart-tn-bar', {type:'bar',
-    data:{labels:tnCounts.map(x=>x.label),datasets:[{data:tnCounts.map(x=>x.count),backgroundColor:TN_COLORS,borderRadius:6}]},
+    data:{labels:tnCounts.map(x=>x.label),datasets:[{data:tnCounts.map(x=>x.count),backgroundColor:metricColors(tnCounts, TN_COLORS),borderRadius:6}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},datalabels:{...DL,anchor:'end',align:'top',color:'#94a3b8',formatter:v=>v>0?v.toLocaleString():''}},
       scales:{x:{ticks:{color:'#94a3b8'},grid:{color:'#2a3347'}},y:{ticks:{color:'#64748b'},grid:{color:'#2a3347'}}}}
@@ -1811,7 +2272,7 @@ function renderTuoiThamNien() {
 
   // TN pie
   makeChart('chart-tn-pie', {type:'doughnut',
-    data:{labels:tnCounts.map(x=>x.label),datasets:[{data:tnCounts.map(x=>x.count),backgroundColor:TN_COLORS,borderWidth:1,borderColor:'#1a2236'}]},
+    data:{labels:tnCounts.map(x=>x.label),datasets:[{data:tnCounts.map(x=>x.count),backgroundColor:metricColors(tnCounts, TN_COLORS),borderWidth:1,borderColor:'#1a2236'}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},boxWidth:10}},
         datalabels:{...DL,formatter:(v,c)=>{const t=c.dataset.data.reduce((a,b)=>a+b,0);return t&&v>0?`${(v/t*100).toFixed(1)}%`:'';},color:'#fff',font:{size:10,weight:'700'}}}}
@@ -1819,14 +2280,16 @@ function renderTuoiThamNien() {
 
   // Avg age & TN by bộ phận top 20
   const bpMap = {};
-  data.forEach(r => {
+  metricRows.forEach(row => {
+    const r = row.r;
     const k = r.nhombophan || '?';
-    if (!bpMap[k]) bpMap[k] = {ages:[], tns:[]};
-    const a = calcAge(r.ngaysinh); if (a!==null) bpMap[k].ages.push(a);
-    const t = calcTN(r.ngayvao);   if (t!==null) bpMap[k].tns.push(t);
+    if (!bpMap[k]) bpMap[k] = {count:0, ages:[], tns:[]};
+    bpMap[k].count++;
+    if (row.age!==null && row.age!==undefined && isFinite(row.age)) bpMap[k].ages.push(row.age);
+    if (row.tn!==null && row.tn!==undefined && isFinite(row.tn)) bpMap[k].tns.push(row.tn);
   });
   const bpList = Object.entries(bpMap)
-    .map(([k,v])=>({name:k, avgAge:v.ages.length?v.ages.reduce((a,b)=>a+b,0)/v.ages.length:0, avgTN:v.tns.length?v.tns.reduce((a,b)=>a+b,0)/v.tns.length:0, cnt:v.ages.length}))
+    .map(([k,v])=>({name:k, avgAge:v.ages.length?v.ages.reduce((a,b)=>a+b,0)/v.ages.length:0, avgTN:v.tns.length?v.tns.reduce((a,b)=>a+b,0)/v.tns.length:0, cnt:v.count}))
     .sort((a,b)=>b.cnt-a.cnt).slice(0,20);
 
   makeChart('chart-avg-bp',{type:'bar',
@@ -1844,11 +2307,10 @@ function renderTuoiThamNien() {
       }}
   });
 
-  // Scatter: tuổi vs thâm niên
-  const scatterData = data.slice(0,500).map(r => {
-    const a=calcAge(r.ngaysinh), t=calcTN(r.ngayvao);
-    if(a===null||t===null) return null;
-    return {x:+a.toFixed(1), y:+t.toFixed(1), r:r};
+  // Scatter: tuổi vs thâm niên. Chỉ hiển thị hồ sơ đủ cả ngày sinh và ngày vào để đảm bảo điểm dữ liệu hợp lệ.
+  const scatterData = metricRows.map(row => {
+    if(row.age===null||row.age===undefined||!isFinite(row.age)||row.tn===null||row.tn===undefined||!isFinite(row.tn)) return null;
+    return {x:+row.age.toFixed(1), y:+row.tn.toFixed(1), r:row.r};
   }).filter(Boolean);
 
   // Color by nhomvitri
@@ -1856,7 +2318,7 @@ function renderTuoiThamNien() {
   const nvtColor = {}; nvtSet.forEach((n,i)=>{nvtColor[n]=COLORS[i%COLORS.length];});
   const scDatasets = nvtSet.slice(0,8).map(nv=>({
     label:nv,
-    data:scatterData.filter(d=>d.r.nhomvitri===nv).map(d=>({x:d.x,y:d.y})),
+    data:scatterData.filter(d=>(d.r.nhomvitri||'Khác')===nv).map(d=>({x:d.x,y:d.y})),
     backgroundColor:nvtColor[nv]+'99',
     pointRadius:4,
   }));
@@ -1874,26 +2336,27 @@ function renderTuoiThamNien() {
 
   // Table by nhomvitri
   const nvtMap = {};
-  data.forEach(r=>{
+  metricRows.forEach(row=>{
+    const r=row.r;
     const k=r.nhomvitri||'Chưa xác định';
-    if(!nvtMap[k]) nvtMap[k]={ages:[],tns:[]};
-    const a=calcAge(r.ngaysinh); if(a!==null) nvtMap[k].ages.push(a);
-    const t=calcTN(r.ngayvao);   if(t!==null) nvtMap[k].tns.push(t);
+    if(!nvtMap[k]) nvtMap[k]={count:0, ages:[],tns:[]};
+    nvtMap[k].count++;
+    if(row.age!==null && row.age!==undefined && isFinite(row.age)) nvtMap[k].ages.push(row.age);
+    if(row.tn!==null && row.tn!==undefined && isFinite(row.tn)) nvtMap[k].tns.push(row.tn);
   });
-  const nvtRows = Object.entries(nvtMap).sort((a,b)=>(b[1].ages.length+b[1].tns.length)-(a[1].ages.length+a[1].tns.length));
+  const nvtRows = Object.entries(nvtMap).sort((a,b)=>b[1].count-a[1].count || a[0].localeCompare(b[0],'vi'));
   document.getElementById('tns-tbody').innerHTML = nvtRows.map(([nv,v])=>{
-    const n=v.ages.length||1;
-    const avgA=v.ages.length?v.ages.reduce((a,b)=>a+b,0)/n:0;
-    const minA=v.ages.length?Math.min(...v.ages):0;
-    const maxA=v.ages.length?Math.max(...v.ages):0;
+    const avgA=v.ages.length?v.ages.reduce((a,b)=>a+b,0)/v.ages.length:0;
+    const minA=v.ages.length?Math.min(...v.ages):null;
+    const maxA=v.ages.length?Math.max(...v.ages):null;
     const avgT=v.tns.length?v.tns.reduce((a,b)=>a+b,0)/v.tns.length:0;
-    const minT=v.tns.length?Math.min(...v.tns):0;
-    const maxT=v.tns.length?Math.max(...v.tns):0;
+    const minT=v.tns.length?Math.min(...v.tns):null;
+    const maxT=v.tns.length?Math.max(...v.tns):null;
     return `<tr>
       <td style="font-weight:600">${nv}</td>
-      <td style="font-family:monospace;color:var(--accent)">${v.ages.length.toLocaleString()}</td>
-      <td>${avgA.toFixed(1)}</td><td>${Math.floor(minA)}</td><td>${Math.floor(maxA)}</td>
-      <td>${fmtTN(avgT)}</td><td>${fmtTN(minT)}</td><td>${fmtTN(maxT)}</td>
+      <td style="font-family:monospace;color:var(--accent)">${v.count.toLocaleString()}</td>
+      <td>${v.ages.length?avgA.toFixed(1):'—'}</td><td>${minA!==null?Math.floor(minA):'—'}</td><td>${maxA!==null?Math.floor(maxA):'—'}</td>
+      <td>${v.tns.length?fmtTN(avgT):'—'}</td><td>${minT!==null?fmtTN(minT):'—'}</td><td>${maxT!==null?fmtTN(maxT):'—'}</td>
     </tr>`;
   }).join('');
 }
@@ -1906,23 +2369,14 @@ function clearTNSFilters(){
 }
 
 function exportTNSExcel(){
+  const asOf=startOfDay(new Date());
   const rows=[];
-  const tt=document.getElementById('tns-tt').value;
-  const pns=getMSVals('ms-tns-pn'),bps=getMSVals('ms-tns-bp'),nvts=getMSVals('ms-tns-nvt');
-  const khoi=document.getElementById('tns-khoi').value;
-  RAW_DATA.filter(r=>{
-    if(tt&&r.trangthai!==tt) return false;
-    if(pns.length&&!pns.includes(r.phapnhan)) return false;
-    if(bps.length&&!bps.includes(r.nhombophan)) return false;
-    if(nvts.length&&!nvts.includes(r.nhomvitri)) return false;
-    if(khoi&&r.khoi!==khoi) return false;
-    return true;
-  }).forEach(r=>{
+  getTNSData().forEach(r=>{
     const age=calcAge(r.ngaysinh),tn=calcTN(r.ngayvao);
     rows.push({'MNV':r.mnv||'','Họ tên':r.hoten||'','Bộ phận':r.nhombophan||'','Nhóm vị trí':r.nhomvitri||'',
       'Ngày sinh':fmtDate(r.ngaysinh),'Tuổi':age?+age.toFixed(1):'',
       'Ngày vào':fmtDate(r.ngayvao),'Thâm niên (năm)':tn?+tn.toFixed(2):'',
-      'Trạng thái':r.trangthai||'','Pháp nhân':r.phapnhan||''});
+      'Trạng thái':isActiveAsOf(r,asOf)?'Đang làm việc':'Nghỉ việc','Pháp nhân':r.phapnhan||''});
   });
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Tuổi_ThâmNiên');
@@ -2243,7 +2697,7 @@ function updateDatasourceBadge() {
 // initWithData: re-init dropdowns and charts with current RAW_DATA
 function initWithData() {
   // Clear existing select options (keep first "Tất cả")
-  ['dash-khoi','list-khoi','tns-khoi','map-khoi'].forEach(id => {
+  ['dash-khoi','list-khoi','pb-khoi','tns-khoi','map-khoi'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     while (el.options.length > 1) el.remove(1);
@@ -2271,6 +2725,7 @@ function initWithData() {
     ['ms-nghi-pn',pns,()=>renderNghiChart()],['ms-nghi-bp',bps,()=>renderNghiChart()],
     ['ms-moi-pn',pns,()=>renderMoiChart()],['ms-moi-bp',bps,()=>renderMoiChart()],
     ['ms-list-pn',pns,()=>renderList()],['ms-list-bp',bps,()=>renderList()],
+    ['ms-pb-pn',pns,()=>renderPhongBan()],['ms-pb-bp',bps,()=>renderPhongBan()],
     ['ms-pn-filter',pns,()=>renderPNPage()],['ms-pn-bp',bps,()=>renderPNPage()],
     ['ms-cd-pn',pns,()=>renderChucDanh()],['ms-cd-bp',bps,()=>renderChucDanh()],
     ['ms-cd-nvt',nvts,()=>renderChucDanh()],
@@ -2279,6 +2734,7 @@ function initWithData() {
     ['ms-dash-nvt',nvts,()=>onMSChange('ms-dash-nvt')],
     ['ms-list-nvt',nvts,()=>renderList()],
     ['ms-pn-nvt',nvts,()=>renderPNPage()],
+    ['ms-pb-nvt',nvts,()=>renderPhongBan()],
     ['ms-tns-nvt',nvts,()=>renderTuoiThamNien()],
     ['ms-nghi-nvt',nvts,()=>renderNghiChart()],
     ['ms-moi-nvt',nvts,()=>renderMoiChart()],
@@ -2297,7 +2753,7 @@ function initWithData() {
 
   // Re-render everything
   renderDashboard(); renderTrend(); renderNghiChart(); renderMoiChart();
-  renderChucDanh(); renderList(); renderPNPage(); renderPNSummary();
+  renderChucDanh(); renderPhongBan(); renderList(); renderPNPage(); renderPNSummary();
   updateStatsBar(RAW_DATA);
 }
 
