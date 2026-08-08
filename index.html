@@ -20,6 +20,7 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#eef2f7;color:#33
 .btn-pdf{background:rgba(198,40,40,.9);color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-pdf:hover{background:#b71c1c}
 .btn-img{background:#00796b;color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-img:hover{background:#004d40}
 .btn-add-seat{background:#7b1fa2;color:#fff}.btn-add-seat:hover{background:#6a1b9a}
+.btn-update-floor{background:#1976d2;color:#fff}.btn-update-floor:hover{background:#0d47a1}
 .btn-del-mode{background:#b71c1c;color:#fff}.btn-del-mode:hover{background:#7f0000}
 .btn-del-mode.active{background:#7f0000;box-shadow:0 0 0 2px #fff inset}
 .del-hint{display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(183,28,28,.92);color:#fff;font-size:.76rem;font-weight:700;padding:5px 14px;border-radius:20px;z-index:50;pointer-events:none;white-space:nowrap}
@@ -338,6 +339,7 @@ let activeFloorId = FLOORS_DEF[0].id;
 let dragMode = false;
 let deleteMode = false;
 let hiddenSeats = {};
+let customFloorImages = {};
 let fileHandle = null;
 let supabaseClient = null;
 let cloudConfig = null;
@@ -357,6 +359,10 @@ async function init() {
   seatPositions = chooseStartupData('seatPos_vpdbp', INITIAL_POS);
   extraSeats    = chooseStartupData('extraSeats_vpdbp', EXTRA_SEATS);
   hiddenSeats   = chooseStartupData('hiddenSeats_vpdbp', HIDDEN_SEATS);
+  customFloorImages = chooseStartupData('floorImages_vpdbp', {});
+  Object.keys(customFloorImages).forEach(key => {
+    if (customFloorImages[key]) FLOOR_IMAGES[key] = customFloorImages[key];
+  });
   buildTabs();
   buildFloors();
   showFloor(activeFloorId);
@@ -387,6 +393,7 @@ function buildFloors() {
         <div class="floor-meta">
           <div class="floor-stats" id="stats-${f.id}">0 / ${total} chỗ</div>
           <button class="btn btn-add-seat btn-sm" onclick="addNewSeat('${f.id}')">&#10010; Thêm chỗ</button>
+          <button class="btn btn-update-floor btn-sm" onclick="updateFloorImage('${f.id}')">&#128247; Cập nhật sơ đồ tầng</button>
           <button class="btn btn-del-mode btn-sm" id="btnDelMode-${f.id}" onclick="toggleDeleteMode('${f.id}')">&#10006; Xóa chỗ</button>
         </div>
       </div>
@@ -407,6 +414,73 @@ function showFloor(floorId) {
   document.getElementById('panel-' + floorId).classList.add('active');
   document.getElementById('tab-' + floorId).classList.add('active');
   renderSeats(floorId);
+}
+
+
+// ── UPDATE FLOOR IMAGE ───────────────────────────
+function updateFloorImage(floorId) {
+  const floor = FLOORS_DEF.find(f => f.id === floorId);
+  if (!floor) return;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = async ev => {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      showToast('Vui lòng chọn đúng file ảnh sơ đồ tầng.', 'err');
+      return;
+    }
+    try {
+      showToast('Đang cập nhật ảnh sơ đồ tầng...', '');
+      const dataUrl = await readFloorImageAsDataURL(file);
+      FLOOR_IMAGES[floor.imgKey] = dataUrl;
+      customFloorImages[floor.imgKey] = dataUrl;
+      const imgEl = document.getElementById('img-' + floor.id);
+      if (imgEl) {
+        imgEl.onload = () => renderSeats(floor.id);
+        imgEl.src = dataUrl;
+      }
+      persist();
+      renderSeats(floor.id);
+      showToast('Đã cập nhật sơ đồ ' + floor.title + '!', 'ok');
+    } catch (e) {
+      console.error('updateFloorImage:', e);
+      showToast('Không cập nhật được ảnh: ' + e.message, 'err');
+    }
+  };
+  input.click();
+}
+function readFloorImageAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('Không đọc được file ảnh.'));
+    fr.onload = e => {
+      const original = e.target.result;
+      const img = new Image();
+      img.onerror = () => resolve(original);
+      img.onload = () => {
+        const MAX = 3200;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.max(1, Math.round(img.width  * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
+      };
+      img.src = original;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function refreshFloorImagesUI() {
+  FLOORS_DEF.forEach(f => {
+    const imgEl = document.getElementById('img-' + f.id);
+    if (imgEl && FLOOR_IMAGES[f.imgKey]) imgEl.src = FLOOR_IMAGES[f.imgKey];
+  });
 }
 
 // ── RENDER SEATS ──────────────────────────────────
@@ -683,6 +757,11 @@ function saveLocalState() {
   localStorage.setItem('seatPos_vpdbp',     JSON.stringify(seatPositions));
   localStorage.setItem('extraSeats_vpdbp',  JSON.stringify(extraSeats));
   localStorage.setItem('hiddenSeats_vpdbp', JSON.stringify(hiddenSeats));
+  try {
+    localStorage.setItem('floorImages_vpdbp', JSON.stringify(customFloorImages));
+  } catch (e) {
+    console.warn('Không lưu được ảnh sơ đồ tầng vào localStorage:', e);
+  }
 }
 
 // ── SUPABASE CLOUD SYNC ───────────────────────────
@@ -798,7 +877,8 @@ function getCloudPayload() {
     userData,
     seatPositions,
     extraSeats,
-    hiddenSeats
+    hiddenSeats,
+    floorImages: customFloorImages
   };
 }
 function applyCloudPayload(payload) {
@@ -807,6 +887,12 @@ function applyCloudPayload(payload) {
   seatPositions = payload.seatPositions || {};
   extraSeats    = payload.extraSeats    || {};
   hiddenSeats   = payload.hiddenSeats   || {};
+  if (payload.floorImages && typeof payload.floorImages === 'object') {
+    customFloorImages = payload.floorImages;
+    Object.keys(customFloorImages).forEach(key => {
+      if (customFloorImages[key]) FLOOR_IMAGES[key] = customFloorImages[key];
+    });
+  }
   saveLocalState();
   buildTabs();
   buildFloors();
@@ -951,14 +1037,28 @@ async function loadFromFile() {
     const file = await fileHandle.getFile();
     const html = await file.text();
     const m = html.match(/\/\*__DATA_START__\*\/([\s\S]*?)\/\*__DATA_END__\*\//);
-    if (m) {
-      const parsed = jsonParse(m[1], null);
-      if (parsed && Object.keys(parsed).length > 0) {
-        userData = parsed;
-        localStorage.setItem('seatData_vpdbp', JSON.stringify(userData));
-        FLOORS_DEF.forEach(f => renderSeats(f.id));
-        showToast('Đã tải dữ liệu từ file.', 'ok');
+    const p = html.match(/\/\*__POS_START__\*\/([\s\S]*?)\/\*__POS_END__\*\//);
+    const x = html.match(/\/\*__EXTRA_START__\*\/([\s\S]*?)\/\*__EXTRA_END__\*\//);
+    const h = html.match(/\/\*__HIDDEN_START__\*\/([\s\S]*?)\/\*__HIDDEN_END__\*\//);
+    const i = html.match(/\/\*__IMG_START__\*\/([\s\S]*?)\/\*__IMG_END__\*\//);
+    let loaded = false;
+    if (m) { const parsed = jsonParse(m[1], null); if (parsed) { userData = parsed; loaded = true; } }
+    if (p) { const parsed = jsonParse(p[1], null); if (parsed) { seatPositions = parsed; loaded = true; } }
+    if (x) { const parsed = jsonParse(x[1], null); if (parsed) { extraSeats = parsed; loaded = true; } }
+    if (h) { const parsed = jsonParse(h[1], null); if (parsed) { hiddenSeats = parsed; loaded = true; } }
+    if (i) {
+      const parsed = jsonParse(i[1], null);
+      if (parsed && typeof parsed === 'object') {
+        Object.keys(parsed).forEach(key => { if (parsed[key]) FLOOR_IMAGES[key] = parsed[key]; });
+        loaded = true;
       }
+    }
+    if (loaded) {
+      saveLocalState();
+      buildTabs();
+      buildFloors();
+      showFloor(activeFloorId);
+      showToast('Đã tải dữ liệu từ file.', 'ok');
     }
   } catch(e) { console.error('loadFromFile:', e); }
 }
@@ -971,6 +1071,7 @@ async function autoSaveToFile() {
     html = replacePosBlock(html,   JSON.stringify(seatPositions));
     html = replaceExtraBlock(html, JSON.stringify(extraSeats));
     html = replaceHiddenBlock(html, JSON.stringify(hiddenSeats));
+    html = replaceImgBlock(html, JSON.stringify(FLOOR_IMAGES));
     const writable = await fileHandle.createWritable();
     await writable.write(html); await writable.close();
     showToast('Đã tự lưu vào file ✓', 'ok');
